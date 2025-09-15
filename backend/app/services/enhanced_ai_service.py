@@ -96,7 +96,7 @@ CRITICAL: Extract EVERY number you can find on this slide, including:
 
 For each number found, provide:
 - Exact value as displayed
-- Business context explaining what it represents
+- Business context explaining what it represents. If it is a derived term mention the whole context. For example - 44% growth from 1916 in FY24 to 2759 in FY25
 - Normalized coordinates [x1, y1, x2, y2] on 0-1 scale
 - Data type classification
 
@@ -382,40 +382,45 @@ IMPORTANT: Be thorough - extract ALL visible numbers, not just the prominent one
                 })
             
             prompt = f"""
-Analyze these Excel cells from sheet '{sheet_name}' (batch {batch_index}, type: {batch_type}) to identify values likely to appear in business presentations.
+You are an expert in analyzing business Excel sheets for presentation-readiness.
+
+Given these Excel cells from sheet '{sheet_name}' (batch {batch_index}, type: {batch_type}), perform a structured analysis that identifies each value and its probable use case in business presentations.
 
 CELLS TO ANALYZE:
 {json.dumps(batch_data, indent=1)}
 
-For each cell that could potentially appear in a presentation, determine:
-1. How likely it is to be referenced in presentations (0.0 to 1.0)
-2. What business context it represents
-3. What type of data it is
+Instructions:
+For each cell in the batch, use BOTH row and column headers and the visible table structure to provide:
+1. Presentation Likelihood: Rate how likely the value is to be cited in a business presentation (score: 0.0 to 1.0).
+2. Business Context: Describe the value’s meaning, ensuring you reference its row and column header to interpret how it would be described in a business setting (e.g., "FY24 growth rate for Digital channel," "Total GWP for FY25," "NBFC market value for FY23").Be clear and concise.
+3. Data Type: Label as one of ("currency", "percentage", "count", "ratio", "metric").
+4. Value Category: Classify as ("revenue", "cost", "growth", "operational", "market", "strategic").
+5. Reasoning: State why this cell is relevant and how it could be referenced or visualized in presentations. Be clear and concise.
 
-Focus on:
+Key focus areas:
 - Financial metrics (revenue, costs, profits, margins)
 - Growth rates and percentages
-- Key performance indicators
-- Market data and statistics
-- Operational metrics
-- Strategic numbers
+- KPIs and strategic numbers
+- Market or operational statistics
 
-Return ONLY valid JSON:
+Pay special attention to summary tables, growth percentages, totals, year-wise figures, and anything from the final summary section.
+
+Return output in strict JSON format as:
 {{
     "batch_analysis": [
         {{
             "cell_reference": "A1",
             "value": "actual_value",
-            "business_context": "detailed_business_meaning",
-            "presentation_likelihood": 0.9,
+            "business_context": "full business meaning, citing row and column headers and what it summarizes.",
+            "presentation_likelihood": 0.95,
             "data_type": "currency|percentage|count|ratio|metric",
             "value_category": "revenue|cost|growth|operational|market|strategic",
-            "reasoning": "why_this_might_appear_in_presentations"
-        }}
+            "reasoning": "business relevance of this cell for presentations"
+        }},
+        ...
     ]
 }}
-
-Return only valid JSON with comprehensive analysis.
+Only return valid and comprehensive JSON; do not output any extra text.
 """
 
             response = self.model.generate_content(prompt)
@@ -650,7 +655,7 @@ Return only valid JSON with comprehensive analysis.
             }
         
         # Process PDF values in smaller batches for better reliability
-        batch_size = 5  # Reduced batch size for better JSON reliability
+        batch_size = len(pdf_values)  # Reduced batch size for better JSON reliability
         all_audit_results = []
         
         for i in range(0, len(pdf_values), batch_size):
@@ -705,7 +710,10 @@ PDF VALUES TO VALIDATE (Batch {batch_num}):
 EXCEL VALUES TO SEARCH AGAINST:
 {json.dumps(excel_sample, indent=1)}
 
-For each PDF value, find its best match in Excel values and determine validation status.
+For each PDF value:
+1. Try to directly match against Excel values.
+2. If the PDF value represents a derived metric (e.g., growth rate, percentage change, ratio), attempt to calculate or infer it using relevant Excel data. For example 44% Year-over-year growth represented by the separate cells with values 1916 to 2759.((2759-1916)/(1916)*100=44%)
+3. Decide the validation status accordingly.
 
 Return ONLY valid JSON:
 {{
@@ -722,7 +730,7 @@ Return ONLY valid JSON:
                 "match_confidence": 0.95
             }},
             "confidence": 0.95,
-            "audit_reasoning": "detailed_explanation_of_validation"
+            "audit_reasoning": "detailed_explanation_of validation, including if calculation was required"
         }}
     ]
 }}
@@ -734,7 +742,10 @@ Validation Status Guide:
 - unverifiable: Cannot determine relationship
 - pdf_only: No corresponding Excel value found
 
-Return ONLY valid JSON.
+Important:
+- Always attempt reasonable calculations (e.g., growth %, ratios) if direct match is not found.
+- If calculated, clearly mention calculation basis in audit_reasoning and provide the computed value in excel_match.excel_value.
+- Return ONLY valid JSON.
 """
 
         try:
@@ -973,7 +984,7 @@ Return only valid JSON.
             json_str = cleaned_text[json_start:json_end + 1]
             
             # Step 3: Advanced JSON cleaning
-            json_str = self._clean_json_aggressively(json_str)
+            # json_str = self._clean_json_aggressively(json_str)
             
             # Step 4: Try to parse
             result = json.loads(json_str)
