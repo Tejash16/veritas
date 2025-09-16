@@ -695,9 +695,47 @@ Only return valid and comprehensive JSON; do not output any extra text.
             }
         }
 
+    def _remove_pdf_extrakeys(self, data: List[Dict]):
+        keys = ['center_point', 'coordinates', 'presentation_priority', 'calculation_type']
+        
+        def remove_keys(data, keys):
+            if isinstance(data, list):
+                for item in data:
+                    remove_keys(item, keys)
+            elif isinstance(data, dict):
+                for key in keys:
+                    if key in data:
+                        del data[key]
+                for value in data.values():
+                    remove_keys(value, keys)
+
+        remove_keys(data, keys)
+
+    def _remove_excel_extrakeys(self, data: List[Dict]):
+        keys = ['file_id','reasoning']
+
+        def remove_keys(data, keys):
+            if isinstance(data, list):
+                for item in data:
+                    remove_keys(item, keys)
+            elif isinstance(data, dict):
+                for key in keys:
+                    if key in data:
+                        del data[key]
+                for value in data.values():
+                    remove_keys(value, keys)
+
+        remove_keys(data, keys)
+
+
+    
     async def _process_direct_audit_batch(self, pdf_batch: List[Dict], all_excel_values: List[Dict], batch_num: int) -> List[Dict]:
         """Process a batch of PDF values against all Excel values"""
+        print(len(pdf_batch))
         
+        self._remove_pdf_extrakeys(pdf_batch)
+        self._remove_excel_extrakeys(all_excel_values)
+
         # Use MORE Excel values for comprehensive comparison (remove the 30 limit)
         excel_sample = all_excel_values[:100] if len(all_excel_values) > 100 else all_excel_values
         
@@ -749,6 +787,8 @@ Important:
 """
 
         try:
+            with open('prompt.txt','w',encoding='utf-8') as f:
+                f.write(str(prompt))
             response = self.model.generate_content(prompt)
             result = await self._parse_gemini_json_response_robust(response.text, f"direct_audit_batch_{batch_num}")
             
