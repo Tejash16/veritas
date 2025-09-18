@@ -9,6 +9,7 @@ import time
 import asyncio
 import os
 import fitz  # PyMuPDF
+import pandas as pd
 from decouple import config
 import re
 from datetime import datetime
@@ -34,7 +35,9 @@ class EnhancedGeminiService:
         self.max_sheets_per_workbook = 50  # Process up to 50 sheets
         self.max_rows_per_sheet = 1000  # Up from 50
         self.max_cols_per_sheet = 100   # Up from 20
-        
+        self.min_table_size = 2  # Minimum rows for a table (header + at least 1 data row)
+        self.max_gap_tolerance = 3  # Maximum empty rows allowed within a table
+
         logger.info("Enhanced Gemini 2.5 Pro Service initialized with comprehensive extraction settings")
 
     async def extract_comprehensive_pdf_data(self, pdf_path: str) -> Dict[str, Any]:
@@ -146,446 +149,432 @@ IMPORTANT: Be thorough - extract ALL visible numbers, not just the prominent one
                 "error": str(e)
             }
 
+
     async def analyze_excel_comprehensive(self, excel_path: str) -> Dict[str, Any]:
         """
-        COMPLETELY REDESIGNED comprehensive Excel analysis - no artificial limits
+        Comprehensive Excel analysis using table extraction approach
         """
-        logger.info(f"Starting COMPREHENSIVE Excel analysis (no limits): {excel_path}")
+        logger.info(f"Starting Excel analysis using table extraction: {excel_path}")
         
         try:
-            import openpyxl
+            # Extract tables from all sheets
+            all_tables = await self._extract_tables_from_excel(excel_path)
+            logger.info(f"Extracted {len(all_tables)} tables from Excel file")
             
-            # Load workbook with both data and formulas
-            wb_data = openpyxl.load_workbook(excel_path, data_only=True)
-            wb_formulas = openpyxl.load_workbook(excel_path, data_only=False)
-            
-            total_sheets = len(wb_data.sheetnames)
-            sheets_to_process = min(total_sheets, self.max_sheets_per_workbook)
-            
-            logger.info(f"Processing {sheets_to_process} sheets out of {total_sheets} total sheets")
-            
-            # Process ALL sheets (up to reasonable limit)
+            # Analyze tables with Gemini
             sheet_analyses = []
             all_potential_sources = []
             
-            for i, sheet_name in enumerate(wb_data.sheetnames[:sheets_to_process]):
-                logger.info(f"Processing Excel sheet {i+1}/{sheets_to_process}: {sheet_name}")
+            for sheet_name, tables in all_tables.items():
+                logger.info(f"Analyzing {len(tables)} tables in sheet: {sheet_name}")
                 
-                sheet_data = wb_data[sheet_name]
-                sheet_formulas = wb_formulas[sheet_name]
-                
-                # Extract FULL sheet structure (no artificial limits)
-                sheet_structure = await self._extract_full_excel_sheet_structure(sheet_data, sheet_formulas)
-                
-                # Process in batches to handle large sheets
-                sheet_analysis = await self._analyze_excel_sheet_comprehensive_batched(sheet_name, sheet_structure)
+                sheet_analysis = await self._analyze_tables_in_sheet(sheet_name, tables)
                 sheet_analyses.append(sheet_analysis)
                 
                 # Collect all potential sources
                 sources = sheet_analysis.get("potential_sources", [])
                 for source in sources:
                     source["source_sheet"] = sheet_name
-                    source["sheet_index"] = i
                 all_potential_sources.extend(sources)
-                
-                # Rate limiting between sheets
-                await asyncio.sleep(1)
             
-            # Synthesize workbook analysis with ALL data
-            workbook_analysis = await self._synthesize_comprehensive_excel_workbook(sheet_analyses, all_potential_sources)
+            # Synthesize workbook analysis
+            workbook_analysis = await self._synthesize_workbook_analysis(sheet_analyses, all_potential_sources)
             
-            total_sources = len(all_potential_sources)
-            logger.info(f"COMPREHENSIVE Excel analysis completed: {total_sources} potential sources identified across {sheets_to_process} sheets")
+            logger.info(f"Excel analysis completed: {len(all_potential_sources)} potential sources identified")
             
             return workbook_analysis
             
         except Exception as e:
-            logger.error(f"Comprehensive Excel analysis failed: {e}")
+            logger.error(f"Excel analysis failed: {e}")
             raise
 
-    async def _extract_full_excel_sheet_structure(self, sheet_data, sheet_formulas) -> Dict[str, Any]:
-        """Extract FULL Excel sheet structure - no artificial row/column limits"""
-        import openpyxl
-        
-        # Get actual sheet dimensions
-        actual_max_row = sheet_data.max_row or 1
-        actual_max_col = sheet_data.max_column or 1
-        
-        # Apply reasonable limits for memory management
-        max_row = min(actual_max_row, self.max_rows_per_sheet)
-        max_col = min(actual_max_col, self.max_cols_per_sheet)
-        
-        logger.info(f"Sheet dimensions: {actual_max_row}x{actual_max_col}, processing: {max_row}x{max_col}")
-        
-        cells_data = {}
-        numeric_cells = []
-        text_cells = []
-        formula_cells = []
-        
-        # Extract ALL relevant cells
-        for row in range(1, max_row + 1):
-            for col in range(1, max_col + 1):
-                try:
-                    cell_data = sheet_data.cell(row, col)
-                    
-                    if cell_data.value is not None:
-                        cell_ref = f"{openpyxl.utils.get_column_letter(col)}{row}"
-                        
-                        cell_info = {
-                            "value": cell_data.value,
-                            "data_type": type(cell_data.value).__name__,
-                            "row": row,
-                            "col": col,
-                            "number_format": getattr(cell_data, 'number_format', None),
-                            "font_bold": getattr(cell_data.font, 'bold', False) if cell_data.font else False,
-                            "font_size": getattr(cell_data.font, 'size', 11) if cell_data.font else 11
-                        }
-                        
-                        # Add formula if exists
-                        try:
-                            cell_formula = sheet_formulas.cell(row, col)
-                            if cell_formula.value and str(cell_formula.value).startswith('='):
-                                cell_info["formula"] = str(cell_formula.value)
-                                formula_cells.append({
-                                    "cell_ref": cell_ref,
-                                    "formula": cell_info["formula"],
-                                    "result_value": cell_data.value,
-                                    **cell_info
-                                })
-                        except:
-                            pass
-                        
-                        cells_data[cell_ref] = cell_info
-                        
-                        # Categorize cells by type
-                        if isinstance(cell_data.value, (int, float)) and abs(cell_data.value) > 0:
-                            numeric_cells.append({
-                                "cell_ref": cell_ref,
-                                "value": cell_data.value,
-                                **cell_info
-                            })
-                        elif isinstance(cell_data.value, str) and len(cell_data.value.strip()) > 0:
-                            text_cells.append({
-                                "cell_ref": cell_ref,
-                                "value": cell_data.value,
-                                **cell_info
-                            })
+    async def _extract_tables_from_excel(self, excel_path: str) -> Dict[str, List[Dict]]:
+        """
+        Extract tables from Excel sheets while preserving structure
+        """
+        try:
+            import openpyxl
+            
+            wb = openpyxl.load_workbook(excel_path, data_only=True)
+            sheets_to_process = min(len(wb.sheetnames), self.max_sheets_per_workbook)
+            
+            all_tables = {}
+            
+            for sheet_name in wb.sheetnames[:sheets_to_process]:
+                sheet = wb[sheet_name]
+                tables = self._extract_tables_from_sheet(sheet)
+                all_tables[sheet_name] = tables
                 
-                except Exception as e:
-                    # Skip problematic cells but continue processing
-                    continue
-        
-        # Detect data regions and important patterns
-        data_regions = self._detect_comprehensive_data_regions(cells_data, max_row, max_col)
-        
-        # Identify high-value cells (likely to be KPIs)
-        high_value_cells = self._identify_high_value_cells(numeric_cells, text_cells)
-        
-        structure = {
-            "cells": cells_data,
-            "numeric_cells": numeric_cells,  # NO LIMITS - include ALL numeric cells
-            "text_cells": text_cells[:100],  # Limit text cells for performance
-            "formula_cells": formula_cells,
-            "high_value_cells": high_value_cells,
-            "data_regions": data_regions,
-            "dimensions": {
-                "actual_max_row": actual_max_row,
-                "actual_max_col": actual_max_col,
-                "processed_max_row": max_row,
-                "processed_max_col": max_col
-            },
-            "statistics": {
-                "total_cells": len(cells_data),
-                "numeric_cells_count": len(numeric_cells),
-                "text_cells_count": len(text_cells),
-                "formula_cells_count": len(formula_cells)
-            }
-        }
-        
-        logger.info(f"Extracted {len(numeric_cells)} numeric cells, {len(text_cells)} text cells, {len(formula_cells)} formula cells")
-        
-        return structure
+                logger.info(f"Sheet '{sheet_name}': Found {len(tables)} tables")
+            
+            return all_tables
+            
+        except Exception as e:
+            logger.error(f"Table extraction failed: {e}")
+            return {}
 
-    async def _analyze_excel_sheet_comprehensive_batched(self, sheet_name: str, sheet_structure: Dict) -> Dict[str, Any]:
-        """Analyze Excel sheet using intelligent batching for comprehensive coverage"""
+    def _extract_tables_from_sheet(self, sheet) -> List[Dict]:
+        """
+        Improved table detection that handles gaps, merged cells, and multi-header tables
+        """
+        try:
+            import openpyxl
+            from openpyxl.utils import get_column_letter
+            
+            tables = []
+            processed_cells = set()
+            max_row = sheet.max_row or 1
+            max_col = sheet.max_column or 1
+            
+            # Convert sheet to DataFrame for easier pattern detection
+            all_data = []
+            for row in range(1, min(max_row + 1, 1000)):  # Limit to 1000 rows
+                row_data = []
+                for col in range(1, min(max_col + 1, 50)):  # Limit to 50 columns
+                    cell = sheet.cell(row, col)
+                    cell_value = cell.value
+                    if cell_value is None:
+                        cell_value = ""
+                    elif isinstance(cell_value, str):
+                        cell_value = cell_value.strip()
+                    row_data.append(cell_value)
+                all_data.append(row_data)
+            
+            df = pd.DataFrame(all_data)
+            
+            # Detect table regions using pattern matching
+            table_regions = self._detect_table_regions(df)
+            
+            for region in table_regions:
+                start_row, start_col, end_row, end_col = region
+                
+                # Skip if already processed or too small
+                if (end_row - start_row < 1) or (end_col - start_col < 1):
+                    continue
+                    
+                # Extract table data with merged cell handling
+                table_data = self._extract_table_with_merged_cells(
+                    sheet, start_row, start_col, end_row, end_col
+                )
+                
+                if table_data and len(table_data) >= 2:  # At least header + 1 row
+                    tables.append({
+                        "start_row": start_row,
+                        "start_col": start_col,
+                        "end_row": end_row,
+                        "end_col": end_col,
+                        "data": table_data,
+                        "columns": table_data[0] if table_data else [],
+                        "shape": (len(table_data) - 1, len(table_data[0])) if table_data else (0, 0)
+                    })
+            
+            return tables
+            
+        except Exception as e:
+            logger.error(f"Table extraction failed: {e}")
+            return []
         
-        numeric_cells = sheet_structure["numeric_cells"]
-        high_value_cells = sheet_structure.get("high_value_cells", [])
+    def _detect_table_regions(self, df: pd.DataFrame) -> List[Tuple[int, int, int, int]]:
+        """
+        Detect table regions based on data patterns and gaps
+        """
+        regions = []
+        rows, cols = df.shape
+        visited = set()
         
-        logger.info(f"Analyzing sheet '{sheet_name}' with {len(numeric_cells)} numeric cells using intelligent batching")
+        for start_row in range(rows):
+            for start_col in range(cols):
+                if (start_row, start_col) in visited:
+                    continue
+                    
+                cell_value = df.iat[start_row, start_col]
+                
+                # Look for potential table starters (headers, numbers, meaningful text)
+                if self._is_potential_table_starter(cell_value):
+                    region = self._find_table_boundaries(df, start_row, start_col, visited)
+                    if region:
+                        regions.append(region)
         
-        # Process high-value cells first (most likely to be presentation values)
+        return regions
+
+    def _is_potential_table_starter(self, value) -> bool:
+        """
+        Check if a cell value looks like a table header or data starter
+        """
+        if not value or value == "":
+            return False
+            
+        # Header-like patterns
+        header_patterns = [
+            r'^[A-Z][a-zA-Z\s&]+$',  # Capitalized words with spaces/ampersands
+            r'FY\d{2}',              # Fiscal years like FY23, FY24
+            r'Q[1-4]',               # Quarters
+            r'total|Total|TOTAL',    # Total indicators
+            r'^[A-Z]{2,}$',          # All caps acronyms
+        ]
+        
+        # Numeric patterns (could be data cells)
+        numeric_patterns = [
+            r'^\d+([.,]\d+)*$',      # Numbers with optional thousands separators
+            r'^\d+%$',               # Percentages
+        ]
+        
+        value_str = str(value)
+        
+        # Check header patterns
+        for pattern in header_patterns:
+            if re.match(pattern, value_str, re.IGNORECASE):
+                return True
+        
+        # Check numeric patterns
+        for pattern in numeric_patterns:
+            if re.match(pattern, value_str):
+                return True
+        
+        return False
+
+    def _find_table_boundaries(self, df: pd.DataFrame, start_row: int, start_col: int, visited: set) -> Optional[Tuple[int, int, int, int]]:
+        """
+        Find the boundaries of a table starting from a given cell
+        """
+        rows, cols = df.shape
+        end_row = start_row
+        end_col = start_col
+        
+        # Expand right to find column boundary
+        for col in range(start_col, cols):
+            # Allow some empty cells in header area (for multi-header tables)
+            empty_count = 0
+            max_empty_in_header = 2
+            
+            for check_row in range(start_row, min(start_row + 5, rows)):
+                if (check_row, col) in visited:
+                    break
+                if not df.iat[check_row, col] or df.iat[check_row, col] == "":
+                    empty_count += 1
+                    if empty_count > max_empty_in_header:
+                        break
+                else:
+                    empty_count = 0
+            
+            if empty_count > max_empty_in_header:
+                end_col = col - 1
+                break
+            else:
+                end_col = col
+        
+        # Expand down to find row boundary with gap tolerance
+        gap_tolerance = 2  # Allow up to 2 empty rows within table
+        current_gap = 0
+        
+        for row in range(start_row, rows):
+            row_has_data = False
+            
+            # Check if this row has any data in our column range
+            for col in range(start_col, end_col + 1):
+                if (row, col) in visited:
+                    continue
+                if df.iat[row, col] and df.iat[row, col] != "":
+                    row_has_data = True
+                    current_gap = 0
+                    break
+            
+            if row_has_data:
+                end_row = row
+            else:
+                current_gap += 1
+                if current_gap > gap_tolerance:
+                    break
+        
+        # Mark cells as visited
+        for row in range(start_row, end_row + 1):
+            for col in range(start_col, end_col + 1):
+                visited.add((row, col))
+        
+        # Ensure we have a valid table (at least 2x2)
+        if (end_row - start_row >= 1) and (end_col - start_col >= 1):
+            return (start_row + 1, start_col + 1, end_row + 1, end_col + 1)  # Convert to 1-indexed
+        
+        return None
+
+    def _extract_table_with_merged_cells(self, sheet, start_row: int, start_col: int, end_row: int, end_col: int) -> List[List]:
+        """
+        Extract table data handling merged cells properly
+        """
+        try:
+            table_data = []
+            
+            # Handle merged cells
+            merged_cell_values = {}
+            if hasattr(sheet, 'merged_cells'):
+                for merge_range in sheet.merged_cells.ranges:
+                    min_row, min_col, max_row, max_col = (
+                        merge_range.min_row, merge_range.min_col, 
+                        merge_range.max_row, merge_range.max_col
+                    )
+                    
+                    # Only consider merged cells within our table region
+                    if (min_row >= start_row and max_row <= end_row and 
+                        min_col >= start_col and max_col <= end_col):
+                        
+                        # Get the value from the top-left cell
+                        top_left_value = sheet.cell(min_row, min_col).value
+                        if top_left_value is None:
+                            top_left_value = ""
+                        
+                        # Store for all cells in merged range
+                        for row in range(min_row, max_row + 1):
+                            for col in range(min_col, max_col + 1):
+                                merged_cell_values[(row, col)] = top_left_value
+            
+            # Extract table data
+            for row in range(start_row, end_row + 1):
+                row_data = []
+                for col in range(start_col, end_col + 1):
+                    cell_coord = (row, col)
+                    
+                    # Check if this cell is part of a merged range
+                    if cell_coord in merged_cell_values:
+                        cell_value = merged_cell_values[cell_coord]
+                    else:
+                        cell = sheet.cell(row, col)
+                        cell_value = cell.value
+                    
+                    # Clean up values
+                    if cell_value is None:
+                        cell_value = ""
+                    elif isinstance(cell_value, str):
+                        cell_value = cell_value.strip()
+                    
+                    row_data.append(cell_value)
+                
+                # Skip completely empty rows
+                if any(cell != "" for cell in row_data):
+                    table_data.append(row_data)
+            
+            return table_data
+            
+        except Exception as e:
+            logger.error(f"Table extraction with merged cells failed: {e}")
+            return []
+
+    async def _analyze_tables_in_sheet(self, sheet_name: str, tables: List[Dict]) -> Dict[str, Any]:
+        """
+        Analyze all tables in a sheet using Gemini
+        """
         all_potential_sources = []
         
-        if high_value_cells:
-            high_value_sources = await self._analyze_cell_batch_with_gemini(
-                sheet_name, high_value_cells, "high_value", batch_index=0
-            )
-            all_potential_sources.extend(high_value_sources)
-        
-        # Process remaining numeric cells in batches
-        remaining_cells = [cell for cell in numeric_cells if cell not in high_value_cells]
-        
-        batch_size = self.max_cells_per_batch
-        total_batches = math.ceil(len(remaining_cells) / batch_size)
-        
-        for batch_index in range(total_batches):
-            start_idx = batch_index * batch_size
-            end_idx = min(start_idx + batch_size, len(remaining_cells))
-            batch_cells = remaining_cells[start_idx:end_idx]
+        for i, table in enumerate(tables):
+            logger.info(f"Analyzing table {i+1}/{len(tables)} in sheet '{sheet_name}'")
             
-            logger.info(f"Processing batch {batch_index + 1}/{total_batches} for sheet '{sheet_name}' ({len(batch_cells)} cells)")
-            
-            batch_sources = await self._analyze_cell_batch_with_gemini(
-                sheet_name, batch_cells, "standard", batch_index + 1
-            )
-            all_potential_sources.extend(batch_sources)
-            
-            # Rate limiting between batches
-            await asyncio.sleep(0.5)
+            try:
+                table_sources = await self._analyze_table_with_gemini(sheet_name, table, i)
+                all_potential_sources.extend(table_sources)
+                
+                # Rate limiting between tables
+                await asyncio.sleep(0.2)
+                
+            except Exception as e:
+                logger.error(f"Table analysis failed for table {i} in {sheet_name}: {e}")
         
         # Sort by presentation likelihood
         all_potential_sources.sort(key=lambda x: x.get("presentation_likelihood", 0), reverse=True)
         
-        analysis_result = {
+        return {
             "sheet_name": sheet_name,
-            "potential_sources": all_potential_sources,  # NO LIMITS - include ALL sources
-            "analysis_metadata": {
-                "total_numeric_cells_analyzed": len(numeric_cells),
-                "total_batches_processed": total_batches + (1 if high_value_cells else 0),
-                "high_value_cells_count": len(high_value_cells),
-                "comprehensive_coverage": True
-            }
+            "potential_sources": all_potential_sources,
+            "tables_analyzed": len(tables),
+            "table_shapes": [t.get("shape", (0, 0)) for t in tables]
         }
-        
-        logger.info(f"Sheet '{sheet_name}' analysis completed: {len(all_potential_sources)} potential sources identified")
-        
-        return analysis_result
 
-    async def _analyze_cell_batch_with_gemini(self, sheet_name: str, cells_batch: List[Dict], batch_type: str, batch_index: int) -> List[Dict]:
-        """Analyze a batch of cells with Gemini for comprehensive extraction"""
+    async def _analyze_table_with_gemini(self, sheet_name: str, table: Dict, table_index: int) -> List[Dict]:
+        """
+        Analyze a single table with Gemini to identify presentation-ready values
+        """
+        table_data = table["data"]
+        columns = table["columns"]
         
-        if not cells_batch:
+        if not table_data or not columns:
             return []
         
-        try:
-            # Prepare batch data for analysis
-            batch_data = []
-            for cell in cells_batch:
-                batch_data.append({
-                    "cell_ref": cell["cell_ref"],
-                    "value": cell["value"],
-                    "data_type": cell["data_type"],
-                    "formula": cell.get("formula"),
-                    "font_bold": cell.get("font_bold", False),
-                    "number_format": cell.get("number_format")
-                })
-            
-            prompt = f"""
-You are an expert in analyzing business Excel sheets for presentation-readiness.
+        prompt = f"""
+You are an expert in analyzing business Excel tables for presentation-readiness.
 
-Given these Excel cells from sheet '{sheet_name}' (batch {batch_index}, type: {batch_type}), perform a structured analysis that identifies each value and its probable use case in business presentations.
+Given this table from sheet '{sheet_name}' (table {table_index + 1}), analyze it to identify values that would be relevant for business presentations.
 
-CELLS TO ANALYZE:
-{json.dumps(batch_data, indent=1)}
+TABLE STRUCTURE:
+Columns: {columns}
+Data (first 10 rows):
+{json.dumps(table_data[:10], indent=2)}
 
 Instructions:
-For each cell in the batch, use BOTH row and column headers and the visible table structure to provide:
-1. Presentation Likelihood: Rate how likely the value is to be cited in a business presentation (score: 0.0 to 1.0).
-2. Business Context: Describe the value’s meaning, ensuring you reference its row and column header to interpret how it would be described in a business setting (e.g., "FY24 growth rate for Digital channel," "Total GWP for FY25," "NBFC market value for FY23").Be clear and concise.
-3. Data Type: Label as one of ("currency", "percentage", "count", "ratio", "metric").
-4. Value Category: Classify as ("revenue", "cost", "growth", "operational", "market", "strategic").
-5. Reasoning: State why this cell is relevant and how it could be referenced or visualized in presentations. Be clear and concise.
+For each potentially relevant value in the table, provide:
+1. Presentation Likelihood: Rate 0.0 to 1.0 based on how likely the value is to be cited in a business presentation
+2. Business Context: Describe the value's meaning based on its row and column context
+3. Data Type: currency, percentage, count, ratio, or metric
+4. Value Category: revenue, cost, growth, operational, market, strategic, or other
+5. Reasoning: Why this value is relevant for presentations
+6. Cell Reference: Approximate position (e.g., "B5" for row 5, column 2)
 
-Key focus areas:
-- Financial metrics (revenue, costs, profits, margins)
+Focus on:
+- Financial metrics (revenues, costs, profits, margins)
 - Growth rates and percentages
-- KPIs and strategic numbers
-- Market or operational statistics
-
-Pay special attention to summary tables, growth percentages, totals, year-wise figures, and anything from the final summary section.
+- KPIs and performance indicators
+- Summary values and totals
+- Year-over-year comparisons
+- Market statistics
 
 Return output in strict JSON format as:
 {{
-    "batch_analysis": [
+    "table_analysis": [
         {{
-            "cell_reference": "A1",
+            "cell_reference": "B5",
             "value": "actual_value",
-            "business_context": "full business meaning, citing row and column headers and what it summarizes.",
-            "presentation_likelihood": 0.95,
-            "data_type": "currency|percentage|count|ratio|metric",
-            "value_category": "revenue|cost|growth|operational|market|strategic",
-            "reasoning": "business relevance of this cell for presentations"
+            "business_context": "Q4 revenue for North America region",
+            "presentation_likelihood": 0.9,
+            "data_type": "currency",
+            "value_category": "revenue",
+            "reasoning": "Shows strong regional performance in latest quarter"
         }},
         ...
     ]
 }}
-Only return valid and comprehensive JSON; do not output any extra text.
+Only return valid JSON; no extra text.
 """
 
+        try:
             response = self.model.generate_content(prompt)
-            result = await self._parse_gemini_json_response_robust(response.text, f"excel_batch_{sheet_name}_{batch_index}")
+            result = await self._parse_gemini_json_response_robust(response.text, f"table_{sheet_name}_{table_index}")
             
-            batch_analysis = result.get('batch_analysis', [])
+            table_analysis = result.get('table_analysis', [])
             
-            # Filter for likely presentation values (threshold can be adjusted)
+            # Filter for likely presentation values
             presentation_sources = [
-                source for source in batch_analysis 
-                if source.get("presentation_likelihood", 0) >= 0.3  # Lower threshold for comprehensive coverage
+                source for source in table_analysis 
+                if source.get("presentation_likelihood", 0) >= 0.4
             ]
             
-            logger.info(f"Batch {batch_index} ({batch_type}): {len(presentation_sources)} presentation-worthy sources from {len(cells_batch)} cells")
+            logger.info(f"Table {table_index} in {sheet_name}: {len(presentation_sources)} presentation-worthy sources")
             
             return presentation_sources
             
         except Exception as e:
-            logger.error(f"Batch analysis failed for {sheet_name} batch {batch_index}: {e}")
-            # Return basic structure for failed batches
-            return [
-                {
-                    "cell_reference": cell["cell_ref"],
-                    "value": cell["value"],
-                    "business_context": "Analysis failed - manual review needed",
-                    "presentation_likelihood": 0.5,
-                    "data_type": "unknown",
-                    "error": str(e)
-                }
-                for cell in cells_batch[:10]  # Return first 10 cells as fallback
-            ]
+            logger.error(f"Table analysis failed for {sheet_name} table {table_index}: {e}")
+            return []
 
-    def _identify_high_value_cells(self, numeric_cells: List[Dict], text_cells: List[Dict]) -> List[Dict]:
-        """Identify cells most likely to contain presentation-worthy values"""
-        
-        high_value_cells = []
-        
-        for cell in numeric_cells:
-            score = 0
-            
-            # Large numbers often indicate important metrics
-            abs_value = abs(cell["value"])
-            if abs_value >= 1000000:  # Millions
-                score += 3
-            elif abs_value >= 100000:  # Hundreds of thousands
-                score += 2
-            elif abs_value >= 10000:  # Ten thousands
-                score += 1
-            
-            # Round numbers often indicate calculated/summary metrics
-            if abs_value > 0 and abs_value % 1000 == 0:
-                score += 1
-            
-            # Percentages between 0-100 (for growth rates, margins, etc.)
-            if 0 < abs_value <= 100 and cell.get("number_format", "").find("%") != -1:
-                score += 2
-            
-            # Bold formatting often indicates important values
-            if cell.get("font_bold", False):
-                score += 2
-            
-            # Larger font sizes indicate importance
-            font_size = cell.get("font_size", 11)
-            if font_size > 12:
-                score += 1
-            
-            # Currency formatting indicates financial metrics
-            number_format = cell.get("number_format", "")
-            if any(currency_symbol in number_format for currency_symbol in ["$", "€", "£", "¥"]):
-                score += 2
-            
-            # Formula cells might be calculated KPIs
-            if cell.get("formula"):
-                score += 1
-            
-            # If score is high enough, consider it high-value
-            if score >= 3:
-                cell["importance_score"] = score
-                high_value_cells.append(cell)
-        
-        # Sort by importance score
-        high_value_cells.sort(key=lambda x: x.get("importance_score", 0), reverse=True)
-        
-        # Return top candidates (but still allow many)
-        return high_value_cells[:500]  # Much higher limit than before
-
-    def _detect_comprehensive_data_regions(self, cells_data: Dict, max_row: int, max_col: int) -> List[Dict]:
-        """Detect data regions in the sheet for better context understanding"""
-        
-        regions = []
-        processed_cells = set()
-        
-        # Look for rectangular data regions
-        for start_row in range(1, min(max_row, 200), 10):  # Sample every 10 rows
-            for start_col in range(1, min(max_col, 50), 5):   # Sample every 5 columns
-                
-                if f"{start_col}_{start_row}" in processed_cells:
-                    continue
-                
-                region = self._analyze_data_region(cells_data, start_row, start_col, max_row, max_col)
-                
-                if region and region["cell_count"] >= 6:  # Minimum table size
-                    regions.append(region)
-                    
-                    # Mark cells as processed
-                    for row in range(region["start_row"], region["end_row"] + 1):
-                        for col in range(region["start_col"], region["end_col"] + 1):
-                            processed_cells.add(f"{col}_{row}")
-        
-        return regions
-
-    def _analyze_data_region(self, cells_data: Dict, start_row: int, start_col: int, max_row: int, max_col: int) -> Dict[str, Any]:
-        """Analyze a potential data region"""
-        import openpyxl
-        
-        region_cells = []
-        end_row = start_row
-        end_col = start_col
-        
-        # Expand region to find contiguous data
-        for row in range(start_row, min(start_row + 20, max_row + 1)):
-            row_has_data = False
-            for col in range(start_col, min(start_col + 15, max_col + 1)):
-                cell_ref = f"{openpyxl.utils.get_column_letter(col)}{row}"
-                if cell_ref in cells_data:
-                    region_cells.append({
-                        "cell_ref": cell_ref,
-                        "value": cells_data[cell_ref]["value"],
-                        "row": row,
-                        "col": col
-                    })
-                    row_has_data = True
-                    end_row = max(end_row, row)
-                    end_col = max(end_col, col)
-            
-            # If row has no data, stop expanding
-            if not row_has_data and len(region_cells) > 0:
-                break
-        
-        if len(region_cells) >= 6:
-            return {
-                "start_row": start_row,
-                "start_col": start_col,
-                "end_row": end_row,
-                "end_col": end_col,
-                "cell_count": len(region_cells),
-                "cells": region_cells[:50],  # Sample of cells for context
-                "density": len(region_cells) / ((end_row - start_row + 1) * (end_col - start_col + 1))
-            }
-        
-        return None
-
-    async def _synthesize_comprehensive_excel_workbook(self, sheet_analyses: List[Dict], all_potential_sources: List[Dict]) -> Dict[str, Any]:
-        """Synthesize comprehensive workbook analysis with ALL extracted data"""
+    async def _synthesize_workbook_analysis(self, sheet_analyses: List[Dict], all_potential_sources: List[Dict]) -> Dict[str, Any]:
+        """Synthesize workbook analysis from all sheet analyses"""
         
         try:
             # Sort all sources by presentation likelihood
             all_potential_sources.sort(key=lambda x: x.get("presentation_likelihood", 0), reverse=True)
             
-            # Create comprehensive statistics
+            # Create statistics
             total_sources = len(all_potential_sources)
-            high_likelihood_sources = len([s for s in all_potential_sources if s.get("presentation_likelihood", 0) >= 0.7])
-            medium_likelihood_sources = len([s for s in all_potential_sources if 0.4 <= s.get("presentation_likelihood", 0) < 0.7])
+            high_likelihood = len([s for s in all_potential_sources if s.get("presentation_likelihood", 0) >= 0.7])
+            medium_likelihood = len([s for s in all_potential_sources if 0.4 <= s.get("presentation_likelihood", 0) < 0.7])
             
-            # Group by data categories
+            # Category breakdown
             category_breakdown = {}
             for source in all_potential_sources:
                 category = source.get("value_category", "unknown")
@@ -595,254 +584,35 @@ Only return valid and comprehensive JSON; do not output any extra text.
                 "workbook_summary": {
                     "total_sheets_processed": len(sheet_analyses),
                     "total_potential_sources": total_sources,
-                    "high_likelihood_sources": high_likelihood_sources,
-                    "medium_likelihood_sources": medium_likelihood_sources,
+                    "high_likelihood_sources": high_likelihood,
+                    "medium_likelihood_sources": medium_likelihood,
                     "category_breakdown": category_breakdown,
                     "analysis_timestamp": datetime.utcnow().isoformat(),
-                    "comprehensive_extraction": True,
-                    "coverage": "FULL - No artificial limits applied"
+                    "extraction_method": "table_based_analysis"
                 },
-                "potential_sources": all_potential_sources,  # ALL SOURCES - NO LIMITS
-                "sheet_analyses": sheet_analyses,
-                "extraction_metadata": {
-                    "approach": "comprehensive_batched_analysis",
-                    "ai_model": "gemini-2.5-pro",
-                    "limitations_removed": [
-                        "sheet_count_limit",
-                        "cell_range_limits", 
-                        "numeric_cell_limits",
-                        "final_results_limits"
-                    ]
-                }
+                "potential_sources": all_potential_sources,
+                "sheet_analyses": sheet_analyses
             }
             
-            logger.info(f"COMPREHENSIVE workbook synthesis completed:")
-            logger.info(f"  - Total sources: {total_sources}")
-            logger.info(f"  - High likelihood: {high_likelihood_sources}")
-            logger.info(f"  - Medium likelihood: {medium_likelihood_sources}")
-            logger.info(f"  - Categories: {list(category_breakdown.keys())}")
+            logger.info(f"Workbook analysis completed: {total_sources} sources, {high_likelihood} high confidence")
             
             return workbook_summary
             
         except Exception as e:
-            logger.error(f"Comprehensive workbook synthesis failed: {e}")
-            # Return basic structure with all sources
+            logger.error(f"Workbook synthesis failed: {e}")
             return {
                 "workbook_summary": {
                     "total_sheets_processed": len(sheet_analyses),
                     "total_potential_sources": len(all_potential_sources),
                     "analysis_timestamp": datetime.utcnow().isoformat(),
-                    "comprehensive_extraction": True
+                    "error": str(e)
                 },
-                "potential_sources": all_potential_sources,  # Still return ALL sources even on error
-                "sheet_analyses": sheet_analyses,
-                "synthesis_error": str(e)
+                "potential_sources": all_potential_sources,
+                "sheet_analyses": sheet_analyses
             }
 
     # ... [Keep all the other existing methods like run_direct_comprehensive_audit, etc. unchanged] ...
     # [The rest of the methods remain the same as in your original code]
-
-    async def run_direct_comprehensive_audit(self, pdf_values: List[Dict], excel_values: List[Dict]) -> Dict[str, Any]:
-        """Run direct comprehensive audit comparing ALL PDF values against ALL Excel values"""
-        logger.info(f"Starting direct comprehensive audit: {len(pdf_values)} PDF values vs {len(excel_values)} Excel values")
-        
-        if not pdf_values or not excel_values:
-            return {
-                "summary": {"total_values_checked": 0, "overall_accuracy": 0.0},
-                "detailed_results": [],
-                "recommendations": ["No values available for audit"],
-                "risk_assessment": "high"
-            }
-        
-        # Process PDF values in smaller batches for better reliability
-        batch_size = len(pdf_values)  # Reduced batch size for better JSON reliability
-        all_audit_results = []
-        
-        for i in range(0, len(pdf_values), batch_size):
-            batch = pdf_values[i:i+batch_size]
-            batch_results = await self._process_direct_audit_batch(batch, excel_values, i // batch_size + 1)
-            all_audit_results.extend(batch_results)
-            await asyncio.sleep(1)  # Rate limiting
-        
-        # Calculate comprehensive summary
-        summary = {
-            "total_values_checked": len(all_audit_results),
-            "matched": len([r for r in all_audit_results if r.get("validation_status") == "matched"]),
-            "mismatched": len([r for r in all_audit_results if r.get("validation_status") == "mismatched"]),
-            "formatting_differences": len([r for r in all_audit_results if r.get("validation_status") == "formatting_difference"]),
-            "unverifiable": len([r for r in all_audit_results if r.get("validation_status") == "unverifiable"]),
-            "pdf_only": len([r for r in all_audit_results if r.get("validation_status") == "pdf_only"]),
-        }
-        
-        if summary["total_values_checked"] > 0:
-            summary["overall_accuracy"] = ((summary["matched"] + summary["formatting_differences"]) / summary["total_values_checked"]) * 100
-        else:
-            summary["overall_accuracy"] = 0.0
-
-        # Generate comprehensive recommendations
-        recommendations = self._generate_direct_audit_recommendations(summary)
-        
-        return {
-            "summary": summary,
-            "detailed_results": all_audit_results,
-            "recommendations": recommendations,
-            "risk_assessment": "low" if summary["overall_accuracy"] >= 85 else "medium" if summary["overall_accuracy"] >= 70 else "high",
-            "coverage_analysis": {
-                "pdf_values_analyzed": len(pdf_values),
-                "excel_values_searched": len(excel_values),
-                "coverage_percentage": 100.0,
-                "approach": "comprehensive_direct_validation"
-            }
-        }
-
-    def _remove_pdf_extrakeys(self, data: List[Dict]):
-        keys = ['center_point', 'coordinates', 'presentation_priority', 'calculation_type']
-        
-        def remove_keys(data, keys):
-            if isinstance(data, list):
-                for item in data:
-                    remove_keys(item, keys)
-            elif isinstance(data, dict):
-                for key in keys:
-                    if key in data:
-                        del data[key]
-                for value in data.values():
-                    remove_keys(value, keys)
-
-        remove_keys(data, keys)
-
-    def _remove_excel_extrakeys(self, data: List[Dict]):
-        keys = ['file_id','reasoning']
-
-        def remove_keys(data, keys):
-            if isinstance(data, list):
-                for item in data:
-                    remove_keys(item, keys)
-            elif isinstance(data, dict):
-                for key in keys:
-                    if key in data:
-                        del data[key]
-                for value in data.values():
-                    remove_keys(value, keys)
-
-        remove_keys(data, keys)
-
-
-    
-    async def _process_direct_audit_batch(self, pdf_batch: List[Dict], all_excel_values: List[Dict], batch_num: int) -> List[Dict]:
-        """Process a batch of PDF values against all Excel values"""
-        print(len(pdf_batch))
-        
-        self._remove_pdf_extrakeys(pdf_batch)
-        self._remove_excel_extrakeys(all_excel_values)
-
-        # Use MORE Excel values for comprehensive comparison (remove the 30 limit)
-        excel_sample = all_excel_values[:100] if len(all_excel_values) > 100 else all_excel_values
-        
-        prompt = f"""
-You are auditing presentation values against Excel source data.
-
-PDF VALUES TO VALIDATE (Batch {batch_num}):
-{json.dumps(pdf_batch, indent=1)}
-
-EXCEL VALUES TO SEARCH AGAINST:
-{json.dumps(excel_sample, indent=1)}
-
-For each PDF value:
-1. Try to directly match against Excel values.
-2. If the PDF value represents a derived metric (e.g., growth rate, percentage change, ratio), attempt to calculate or infer it using relevant Excel data. For example 44% Year-over-year growth represented by the separate cells with values 1916 to 2759.((2759-1916)/(1916)*100=44%)
-3. Decide the validation status accordingly.
-
-Return ONLY valid JSON:
-{{
-    "batch_results": [
-        {{
-            "pdf_value_id": "pdf_value_id_from_input",
-            "pdf_value": "actual_pdf_value",
-            "pdf_context": "business_context_meaning",
-            "validation_status": "matched|mismatched|formatting_difference|unverifiable|pdf_only",
-            "excel_match": {{
-                "source_file": "matched_excel_file_name",
-                "cell_reference": "matched_cell_reference", 
-                "excel_value": "matched_excel_value",
-                "match_confidence": 0.95
-            }},
-            "confidence": 0.95,
-            "audit_reasoning": "detailed_explanation_of validation, including if calculation was required"
-        }}
-    ]
-}}
-
-Validation Status Guide:
-- matched: Values are identical or equivalent
-- formatting_difference: Same value, different format (e.g., 1000000 vs 1,000,000)
-- mismatched: Values are different but related context
-- unverifiable: Cannot determine relationship
-- pdf_only: No corresponding Excel value found
-
-Important:
-- Always attempt reasonable calculations (e.g., growth %, ratios) if direct match is not found.
-- If calculated, clearly mention calculation basis in audit_reasoning and provide the computed value in excel_match.excel_value.
-- Return ONLY valid JSON.
-"""
-
-        try:
-            with open('prompt.txt','w',encoding='utf-8') as f:
-                f.write(str(prompt))
-            response = self.model.generate_content(prompt)
-            result = await self._parse_gemini_json_response_robust(response.text, f"direct_audit_batch_{batch_num}")
-            
-            batch_results = result.get('batch_results', [])
-            
-            # Combine with original PDF values to ensure completeness
-            final_results = []
-            for i, pdf_value in enumerate(pdf_batch):
-                if i < len(batch_results):
-                    audit_result = batch_results[i]
-                    # Ensure we have all required fields
-                    audit_result.update({
-                        "original_pdf_data": pdf_value,
-                        "audit_timestamp": datetime.utcnow().isoformat(),
-                        "batch_number": batch_num
-                    })
-                    final_results.append(audit_result)
-                else:
-                    # Fallback for missing results
-                    final_results.append({
-                        "pdf_value_id": pdf_value.get("id", f"pdf_value_{i}"),
-                        "pdf_value": pdf_value.get("value", "unknown"),
-                        "pdf_context": pdf_value.get("business_context", {}).get("semantic_meaning", "unknown"),
-                        "validation_status": "unverifiable",
-                        "excel_match": None,
-                        "confidence": 0.0,
-                        "audit_reasoning": "Batch processing incomplete",
-                        "original_pdf_data": pdf_value,
-                        "audit_timestamp": datetime.utcnow().isoformat(),
-                        "batch_number": batch_num
-                    })
-            
-            logger.info(f"Direct audit batch {batch_num}: Processed {len(final_results)} PDF values")
-            return final_results
-            
-        except Exception as e:
-            logger.error(f"Direct audit batch {batch_num} failed: {e}")
-            # Return fallback results
-            fallback_results = []
-            for i, pdf_value in enumerate(pdf_batch):
-                fallback_results.append({
-                    "pdf_value_id": pdf_value.get("id", f"pdf_value_{i}"),
-                    "pdf_value": pdf_value.get("value", "unknown"),
-                    "pdf_context": pdf_value.get("business_context", {}).get("semantic_meaning", "unknown"),
-                    "validation_status": "unverifiable",
-                    "excel_match": None,
-                    "confidence": 0.0,
-                    "audit_reasoning": f"Audit error: {str(e)[:100]}",
-                    "original_pdf_data": pdf_value,
-                    "audit_timestamp": datetime.utcnow().isoformat(),
-                    "batch_number": batch_num,
-                    "error": str(e)
-                })
-            return fallback_results
 
     def _generate_direct_audit_recommendations(self, summary: Dict) -> List[str]:
         """Generate recommendations based on direct audit summary"""
@@ -887,6 +657,282 @@ Important:
         recommendations.append(f"📊 Comprehensive coverage: All {total} extracted values were validated (100% coverage).")
         
         return recommendations
+
+    async def run_direct_comprehensive_audit(self, pdf_values: List[Dict], excel_values: List[Dict]) -> Dict[str, Any]:
+        """Run direct comprehensive audit comparing ALL PDF values against ALL Excel values"""
+        logger.info(f"Starting direct comprehensive audit: {len(pdf_values)} PDF values vs {len(excel_values)} Excel values")
+        
+        if not pdf_values or not excel_values:
+            return {
+                "summary": {"total_values_checked": 0, "overall_accuracy": 0.0},
+                "detailed_results": [],
+                "recommendations": ["No values available for audit"],
+                "risk_assessment": "high"
+            }
+        
+        # Process PDF values in proper smaller batches
+        batch_size = len(pdf_values)  # Reduced to manageable size for API
+        all_audit_results = []
+        total_batches = math.ceil(len(pdf_values) / batch_size)
+        
+        for batch_num in range(total_batches):
+            start_idx = batch_num * batch_size
+            end_idx = min((batch_num + 1) * batch_size, len(pdf_values))
+            batch = pdf_values[start_idx:end_idx]
+            
+            logger.info(f"Processing batch {batch_num + 1}/{total_batches} ({len(batch)} values)")
+            
+            batch_results = await self._process_direct_audit_batch(batch, excel_values, batch_num + 1, total_batches)
+            all_audit_results.extend(batch_results)
+            
+            # Rate limiting with progress tracking
+            await asyncio.sleep(2)  # Increased sleep for better API reliability
+        
+        # Calculate comprehensive summary
+        summary = self._calculate_audit_summary(all_audit_results)
+        
+        # Generate comprehensive recommendations
+        recommendations = self._generate_direct_audit_recommendations(summary)
+        
+        return {
+            "summary": summary,
+            "detailed_results": all_audit_results,
+            "recommendations": recommendations,
+            "risk_assessment": "low" if summary["overall_accuracy"] >= 85 else "medium" if summary["overall_accuracy"] >= 70 else "high",
+            "coverage_analysis": {
+                "pdf_values_analyzed": len(pdf_values),
+                "excel_values_searched": len(excel_values),
+                "coverage_percentage": 100.0,
+                "approach": "comprehensive_direct_validation",
+                "batches_processed": total_batches
+            }
+        }
+
+    def _calculate_audit_summary(self, all_audit_results: List[Dict]) -> Dict[str, Any]:
+        """Calculate comprehensive audit summary statistics"""
+        total = len(all_audit_results)
+        
+        summary = {
+            "total_values_checked": total,
+            "matched": len([r for r in all_audit_results if r.get("validation_status") == "matched"]),
+            "mismatched": len([r for r in all_audit_results if r.get("validation_status") == "mismatched"]),
+            "formatting_differences": len([r for r in all_audit_results if r.get("validation_status") == "formatting_difference"]),
+            "unverifiable": len([r for r in all_audit_results if r.get("validation_status") == "unverifiable"]),
+            "pdf_only": len([r for r in all_audit_results if r.get("validation_status") == "pdf_only"]),
+            "errored": len([r for r in all_audit_results if r.get("error")]),
+        }
+        
+        if summary["total_values_checked"] > 0:
+            valid_results = total - summary["errored"]
+            if valid_results > 0:
+                summary["overall_accuracy"] = ((summary["matched"] + summary["formatting_differences"]) / valid_results) * 100
+            else:
+                summary["overall_accuracy"] = 0.0
+            summary["success_rate"] = (valid_results / total) * 100
+        else:
+            summary["overall_accuracy"] = 0.0
+            summary["success_rate"] = 0.0
+
+        return summary
+
+    async def _process_direct_audit_batch(self, pdf_batch: List[Dict], all_excel_values: List[Dict], batch_num: int, total_batches: int) -> List[Dict]:
+        """Process a batch of PDF values against all Excel values"""
+        
+        # Create unique debug files for each batch
+        debug_prefix = f"batch_{batch_num:02d}_of_{total_batches:02d}"
+        
+        # with open(f'pdf_{debug_prefix}.txt', 'w', encoding='utf-8') as f:
+        #     f.write(str(pdf_batch))
+        
+        # Clean data for better prompt performance
+        cleaned_pdf_batch = self._clean_pdf_batch_for_audit(pdf_batch)
+        cleaned_excel_values = self._clean_excel_values_for_audit(all_excel_values)
+        # cleaned_pdf_batch = pdf_batch
+        # cleaned_excel_values = all_excel_values
+
+
+        # with open(f'excel_{debug_prefix}.txt', 'w', encoding='utf-8') as f:
+        #     f.write(str(cleaned_excel_values[:200]))  # Sample for debug
+        
+        # Use smarter Excel sampling - prioritize values that might match
+        excel_sample = self._get_relevant_excel_sample(cleaned_excel_values, cleaned_pdf_batch)
+        
+        prompt = f"""
+    You are auditing presentation values against Excel source data.
+
+    BATCH {batch_num}/{total_batches} - PDF VALUES TO VALIDATE:
+    {json.dumps(cleaned_pdf_batch, indent=1)}
+
+    RELEVANT EXCEL VALUES TO SEARCH AGAINST (showing {len(excel_sample)} of {len(all_excel_values)} total):
+    {json.dumps(excel_sample, indent=1)}
+
+    For EACH PDF value (process them in order):
+    1. FIRST try to directly match against Excel values
+    2. If no direct match, check if it's a derived metric (growth rate, percentage, ratio).For example 44% Year-over-year growth represented by the separate cells with values 1916 to 2759.((2759-1916)/(1916)*100=44%)
+    3. For derived metrics, attempt calculation using relevant Excel data
+    4. Assign appropriate validation status
+
+    CRITICAL: Process PDF values IN THE ORDER THEY APPEAR in the input list.
+
+    Return ONLY valid JSON:
+    {{
+        "batch_results": [
+            {{
+                "pdf_value_id": "value_1_001",
+                "pdf_value": "2759",
+                "pdf_context": "FY25 revenue growth",
+                "validation_status": "matched|mismatched|unverifiable",
+                "excel_match": {{
+                    "source_cell": "Sheet1!B5",
+                    "excel_value": "2759",
+                    "match_confidence": 0.95,
+                    "calculation_basis": "direct_match|calculated|inferred"
+                }},
+                "confidence": 0.95,
+                "audit_reasoning": "Detailed explanation including calculation steps if applicable"
+            }}
+        ]
+    }}
+
+    Validation Status Guide(Only these 3 validation status is allowed):
+    - matched: Exact or equivalent value found, match_confidence greater than 0.90. Calculated values also have validation status as matched. PDF or Excel match also fall under this category. excel_match or pdf_match should also have validation status as matched
+    - mismatched: Different values but related context  
+    - unverifiable: Cannot verify relationship. Also when the value is only present in pdf
+
+    IMPORTANT RULES:
+    1. Return EXACTLY {len(pdf_batch)} results, one for each PDF value IN ORDER
+    2. For calculated values, set the validation_status as matched and show the calculation in audit_reasoning
+    3. Return ONLY valid JSON, no other text
+    """
+
+        try:
+            with open(f'prompt_{debug_prefix}.txt', 'w', encoding='utf-8') as f:
+                f.write(prompt)
+            
+            response = self.model.generate_content(prompt)
+            
+            result = await self._parse_gemini_json_response_robust(response.text, f"direct_audit_batch_{batch_num}")
+            
+            with open(f'parsed_result_{debug_prefix}.txt', 'w', encoding='utf-8') as f:
+                f.write(str(result))
+                
+            batch_results = result.get('batch_results', [])
+            
+            # Ensure we have exactly the right number of results
+            final_results = []
+            for i, pdf_value in enumerate(pdf_batch):
+                if i < len(batch_results):
+                    audit_result = batch_results[i]
+                    # Validate and enhance the result
+                    enhanced_result = self._enhance_audit_result(audit_result, pdf_value, batch_num)
+                    final_results.append(enhanced_result)
+                else:
+                    # Create fallback result for missing entries
+                    fallback_result = self._create_fallback_audit_result(pdf_value, batch_num, i)
+                    final_results.append(fallback_result)
+            
+            logger.info(f"Batch {batch_num}: Processed {len(final_results)} PDF values, {len([r for r in final_results if r.get('error')])} errors")
+            return final_results
+            
+        except Exception as e:
+            logger.error(f"Direct audit batch {batch_num} failed: {e}")
+            # Create fallback results for entire batch
+            return [self._create_fallback_audit_result(pdf_value, batch_num, i, str(e)) 
+                    for i, pdf_value in enumerate(pdf_batch)]
+
+    def _clean_pdf_batch_for_audit(self, pdf_batch: List[Dict]) -> List[Dict]:
+        """Clean PDF batch data for audit prompts"""
+        cleaned = []
+        for item in pdf_batch:
+            cleaned_item = {
+                "id": item.get("id", ""),
+                "value": item.get("value", ""),
+                "normalized_value": item.get("normalized_value", ""),
+                "data_type": item.get("data_type", ""),
+                "business_context": item.get("business_context", {}).get("semantic_meaning", "")
+            }
+            cleaned.append(cleaned_item)
+        return cleaned
+
+    def _clean_excel_values_for_audit(self, excel_values: List[Dict]) -> List[Dict]:
+        """Clean Excel values for audit prompts"""
+        cleaned = []
+        for item in excel_values:
+            cleaned_item = {
+                "value": item.get("value", ""),
+                "cell_reference": item.get("cell_reference", ""),
+                "sheet_name": item.get("sheet_name", ""),
+                "business_context": item.get("business_context", "")
+            }
+            cleaned.append(cleaned_item)
+        return cleaned
+
+    def _get_relevant_excel_sample(self, excel_values: List[Dict], pdf_batch: List[Dict]) -> List[Dict]:
+        """Get relevant Excel sample based on PDF batch content"""
+        sample_size = min(150, len(excel_values))  # Increased sample size
+        
+        # Extract keywords from PDF batch for relevance filtering
+        pdf_keywords = set()
+        for pdf_item in pdf_batch:
+            context = pdf_item.get("business_context", "").lower()
+            pdf_keywords.update(context.split())
+            value = str(pdf_item.get("value", "")).lower()
+            pdf_keywords.update(value.split())
+        
+        # Prioritize Excel values that might be relevant
+        if pdf_keywords:
+            scored_excel = []
+            for excel_item in excel_values:
+                score = 0
+                excel_context = excel_item.get("business_context", "").lower()
+                excel_value = str(excel_item.get("value", "")).lower()
+                
+                # Score based on keyword matches
+                for keyword in pdf_keywords:
+                    if keyword in excel_context or keyword in excel_value:
+                        score += 1
+                
+                scored_excel.append((score, excel_item))
+            
+            # Sort by relevance score and take top samples
+            scored_excel.sort(key=lambda x: x[0], reverse=True)
+            relevant_sample = [item for score, item in scored_excel[:sample_size]]
+            
+            # If we have enough relevant samples, return them
+            if len(relevant_sample) >= sample_size // 2:
+                return relevant_sample
+        
+        # Fallback: return a stratified sample
+        return excel_values[:sample_size]
+
+    def _enhance_audit_result(self, audit_result: Dict, original_pdf: Dict, batch_num: int) -> Dict:
+        """Enhance audit result with additional metadata"""
+        enhanced = audit_result.copy()
+        enhanced.update({
+            "original_pdf_data": original_pdf,
+            "audit_timestamp": datetime.utcnow().isoformat(),
+            "batch_number": batch_num,
+            "pdf_value_id": enhanced.get("pdf_value_id", original_pdf.get("id", f"pdf_value_{batch_num}"))
+        })
+        return enhanced
+
+    def _create_fallback_audit_result(self, pdf_value: Dict, batch_num: int, index: int, error_msg: str = None) -> Dict:
+        """Create a fallback audit result for error cases"""
+        result = {
+            "pdf_value_id": pdf_value.get("id", f"pdf_value_{batch_num}_{index}"),
+            "pdf_value": pdf_value.get("value", "unknown"),
+            "pdf_context": pdf_value.get("business_context", {}).get("semantic_meaning", "unknown"),
+            "validation_status": "unverifiable",
+            "excel_match": None,
+            "confidence": 0.0,
+            "audit_reasoning": "Processing error" + (f": {error_msg}" if error_msg else ""),
+            "original_pdf_data": pdf_value,
+            "audit_timestamp": datetime.utcnow().isoformat(),
+            "batch_number": batch_num
+        }
+        if error_msg:
+            result["error"] = error_msg
+        return result
 
     # ... [Include all other existing methods unchanged] ...
 
@@ -1040,27 +1086,6 @@ Return only valid JSON.
             logger.error(f"Unexpected parsing error for {context}: {e}")
             return self._get_fallback_structure(context)
 
-    def _clean_json_aggressively(self, json_str: str) -> str:
-        """Aggressively clean JSON string for common Gemini issues"""
-        # Remove trailing commas before closing braces/brackets
-        json_str = re.sub(r',(\s*[}\]])', r'\1', json_str)
-        
-        # Fix unquoted keys
-        json_str = re.sub(r'([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:', r'\1"\2":', json_str)
-        
-        # Fix single quotes to double quotes
-        json_str = re.sub(r"'([^']*)'", r'"\1"', json_str)
-        
-        # Remove comments if any
-        json_str = re.sub(r'//.*?$', '', json_str, flags=re.MULTILINE)
-        
-        # Fix common value issues
-        json_str = re.sub(r':\s*True\b', ': true', json_str)
-        json_str = re.sub(r':\s*False\b', ': false', json_str)
-        json_str = re.sub(r':\s*None\b', ': null', json_str)
-        
-        return json_str
-
     async def _json_recovery_strategies(self, response_text: str, context: str) -> Dict[str, Any]:
         """Multiple strategies to recover from JSON parsing failures"""
         
@@ -1135,3 +1160,43 @@ Return only valid JSON.
 
 # Initialize the enhanced service
 enhanced_gemini_service = EnhancedGeminiService()
+
+
+# if __name__ == "__main__":
+#     enhanced_gemini_service = EnhancedGeminiService()
+#     async def main():
+#         # result = await enhanced_gemini_service.analyze_excel_comprehensive('/Users/himanshusharma/Personal_Code/sample data/Slide 1.xlsx')
+#         # with open('result.json', 'w', encoding='utf-8') as f:
+#         #     json.dump(result, f, ensure_ascii=False, indent=4)  # writes dict as JSON
+#         # result_pdf = await enhanced_gemini_service.extract_comprehensive_pdf_data('/Users/himanshusharma/Personal_Code/sample data/Main Presentation - 1 page.pdf')
+#         # with open('result_pdf.json', 'w', encoding='utf-8') as f:
+#         #     json.dump(result_pdf, f, ensure_ascii=False, indent=4)  # writes dict as JSON
+
+#         with open('result.json', 'r', encoding='utf-8') as f:
+#             excel_data = json.load(f)  # This parses the JSON
+        
+#         with open('result_pdf.json', 'r', encoding='utf-8') as f:
+#             pdf_data = json.load(f)  # This parses the JSON
+#         excel_values = excel_data.get('potential_sources', [])
+#         pdf_values = pdf_data.get('all_extracted_values', [])
+        
+#         complete_result = await enhanced_gemini_service.run_direct_comprehensive_audit(
+#             pdf_values=pdf_values,
+#             excel_values=excel_values
+#         )
+        
+#         with open('result_complete.json', 'w', encoding='utf-8') as f:
+#             json.dump(complete_result, f, ensure_ascii=False, indent=4)
+    
+#     asyncio.run(main())
+
+#     # model_name = "gemini-2.0-flash-exp"
+    # with open('/Users/himanshusharma/Personal_Code/veritas-dev/backend/prompt.txt', 'r', encoding='utf-8') as f:
+    #     prompt = f.read()
+
+    # response = enhanced_gemini_service.model.generate_content(contents=[prompt])
+    
+    # with open('result.txt', 'w', encoding='utf-8') as f:
+    #     f.write(response.text)
+
+    # run_direct_comprehensive_audit
