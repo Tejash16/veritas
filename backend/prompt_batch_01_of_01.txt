@@ -8,105 +8,105 @@
   "value": "44%",
   "normalized_value": "0.44",
   "data_type": "percentage",
-  "business_context": "Year-over-year percentage growth from FY24 to FY25"
+  "business_context": "Year-over-year growth percentage of Retail GWP from FY24 to FY25."
  },
  {
   "id": "value_1_002",
   "value": "2759",
-  "normalized_value": "2759.0",
+  "normalized_value": "2759",
   "data_type": "metric",
-  "business_context": "Retail GWP in FY25"
+  "business_context": "Retail GWP in FY25 (Crores)"
  },
  {
   "id": "value_1_003",
   "value": "1916",
-  "normalized_value": "1916.0",
+  "normalized_value": "1916",
   "data_type": "metric",
-  "business_context": "Retail GWP in FY24"
+  "business_context": "Retail GWP in FY24 (Crores)"
  },
  {
   "id": "value_1_004",
-  "value": "38%",
-  "normalized_value": "0.38",
-  "data_type": "percentage",
-  "business_context": "Year-over-year growth for Proprietary Channels"
+  "value": "820",
+  "normalized_value": "820",
+  "data_type": "metric",
+  "business_context": "Proprietary Channel Retail GWP in FY25 (Crores)"
  },
  {
   "id": "value_1_005",
-  "value": "820",
-  "normalized_value": "820.0",
-  "data_type": "metric",
-  "business_context": "GWP from Proprietary Channels in FY25"
+  "value": "38%",
+  "normalized_value": "0.38",
+  "data_type": "percentage",
+  "business_context": "YoY growth of proprietary channels"
  },
  {
   "id": "value_1_006",
   "value": "596",
-  "normalized_value": "596.0",
+  "normalized_value": "596",
   "data_type": "metric",
-  "business_context": "GWP from unnamed channel in FY24"
+  "business_context": "Proprietary Channel Retail GWP in FY24 (Crores)"
  },
  {
   "id": "value_1_007",
-  "value": "45%",
-  "normalized_value": "0.45",
-  "data_type": "percentage",
-  "business_context": "Year-over-year growth for Banks channel"
+  "value": "898",
+  "normalized_value": "898",
+  "data_type": "metric",
+  "business_context": "Banks Retail GWP in FY25 (Crores)"
  },
  {
   "id": "value_1_008",
-  "value": "898",
-  "normalized_value": "898.0",
-  "data_type": "metric",
-  "business_context": "GWP from Banks channel in FY25"
+  "value": "45%",
+  "normalized_value": "0.45",
+  "data_type": "percentage",
+  "business_context": "YoY growth of Banks"
  },
  {
   "id": "value_1_009",
   "value": "628",
-  "normalized_value": "628.0",
+  "normalized_value": "628",
   "data_type": "metric",
-  "business_context": "GWP from unnamed channel in FY24"
+  "business_context": "Banks Retail GWP in FY24 (Crores)"
  },
  {
   "id": "value_1_010",
-  "value": "97%",
-  "normalized_value": "0.97",
-  "data_type": "percentage",
-  "business_context": "Year-over-year growth for Digital channel"
+  "value": "471",
+  "normalized_value": "471",
+  "data_type": "metric",
+  "business_context": "Digital Retail GWP in FY25 (Crores)"
  },
  {
   "id": "value_1_011",
-  "value": "471",
-  "normalized_value": "471.0",
-  "data_type": "metric",
-  "business_context": "GWP from Digital channel in FY25"
+  "value": "97%",
+  "normalized_value": "0.97",
+  "data_type": "percentage",
+  "business_context": "YoY growth of Digital"
  },
  {
   "id": "value_1_012",
   "value": "250",
-  "normalized_value": "250.0",
+  "normalized_value": "250",
   "data_type": "metric",
-  "business_context": "GWP from unnamed channel in FY24"
+  "business_context": "Digital Retail GWP in FY24 (Crores)"
  },
  {
   "id": "value_1_013",
-  "value": "30%",
-  "normalized_value": "0.30",
-  "data_type": "percentage",
-  "business_context": "Year-over-year growth for CA / Brokers channel"
+  "value": "580",
+  "normalized_value": "580",
+  "data_type": "metric",
+  "business_context": "CA/Brokers Retail GWP in FY25 (Crores)"
  },
  {
   "id": "value_1_014",
-  "value": "580",
-  "normalized_value": "580.0",
-  "data_type": "metric",
-  "business_context": "GWP from CA / Brokers channel in FY25"
+  "value": "30%",
+  "normalized_value": "0.3",
+  "data_type": "percentage",
+  "business_context": "YoY growth of CA/Brokers"
  },
  {
   "id": "value_1_015",
   "value": "453",
-  "normalized_value": "453.0",
+  "normalized_value": "453",
   "data_type": "metric",
-  "business_context": "GWP from unnamed channel in FY24"
+  "business_context": "CA/Brokers Retail GWP in FY24 (Crores)"
  },
  {
   "id": "value_1_016",
@@ -132,201 +132,249 @@
  {
   "id": "value_1_019",
   "value": "2,447",
-  "normalized_value": "2447.0",
-  "data_type": "metric",
-  "business_context": "Retail GWP in FY25 in crore"
+  "normalized_value": "2447",
+  "data_type": "currency",
+  "business_context": "Retail GWP2 at Rs. 2,447 crore"
  },
  {
   "id": "value_1_020",
   "value": "28%",
   "normalized_value": "0.28",
   "data_type": "percentage",
-  "business_context": "Year-over-year Retail GWP growth"
+  "business_context": "Year-over-year growth"
  },
  {
   "id": "value_1_021",
   "value": "26%",
   "normalized_value": "0.26",
   "data_type": "percentage",
-  "business_context": "Percentage increase in agent count"
+  "business_context": "26% increase in Agent count"
  }
 ]
 
-    RELEVANT EXCEL VALUES TO SEARCH AGAINST (showing 29 of 29 total):
+    RELEVANT EXCEL VALUES TO SEARCH AGAINST (showing 37 of 37 total):
     [
- {
-  "value": "0.279",
-  "cell_reference": "D6",
-  "sheet_name": "",
-  "business_context": "Growth rate of the CA/Brokers channel from FY24 to FY25."
- },
  {
   "value": "0.966",
   "cell_reference": "D5",
   "sheet_name": "",
-  "business_context": "Growth rate of the Digital channel from FY24 to FY25."
+  "business_context": "Growth rate of Digital channel revenue from FY24 to FY25"
  },
  {
   "value": "0.377",
   "cell_reference": "D3",
   "sheet_name": "",
-  "business_context": "Growth rate of the Proprietary channel from FY24 to FY25."
+  "business_context": "Growth rate of Proprietary channel revenue from FY24 to FY25"
  },
  {
   "value": "0.414",
   "cell_reference": "D4",
   "sheet_name": "",
-  "business_context": "Growth rate of the Banks channel from FY24 to FY25."
+  "business_context": "Growth rate of Banks channel revenue from FY24 to FY25"
  },
  {
-  "value": "453.07",
-  "cell_reference": "B6",
+  "value": "0.279",
+  "cell_reference": "D6",
   "sheet_name": "",
-  "business_context": "FY24 revenue for the CA/Brokers channel."
+  "business_context": "Growth rate of CA/Brokers channel revenue from FY24 to FY25"
  },
  {
-  "value": 19358.539308180567,
-  "cell_reference": "C10",
+  "value": "(27852.363327880852/19358.539308180567) - 1",
+  "cell_reference": "D10/C10 - 1",
   "sheet_name": "",
-  "business_context": "Total Gross Written Premium (GWP) across all channels in FY24"
- },
- {
-  "value": 27852.363327880852,
-  "cell_reference": "D10",
-  "sheet_name": "",
-  "business_context": "Total Gross Written Premium (GWP) across all channels in FY25"
- },
- {
-  "value": "579.64",
-  "cell_reference": "C6",
-  "sheet_name": "",
-  "business_context": "FY25 revenue for the CA/Brokers channel."
+  "business_context": "Projected Growth Rate of Total GWP from FY24 to FY25"
  },
  {
   "value": "0.343",
   "cell_reference": "D7",
   "sheet_name": "",
-  "business_context": "Growth rate of the Rural channel from FY24 to FY25."
+  "business_context": "Growth rate of Rural channel revenue from FY24 to FY25"
  },
  {
-  "value": 5420.3460319999995,
-  "cell_reference": "C2",
+  "value": "(19358.539308180567/16046.626194025454) - 1",
+  "cell_reference": "C10/B10 - 1",
   "sheet_name": "",
-  "business_context": "Total Gross Written Premium (GWP) for Agency channel in FY24"
- },
- {
-  "value": 7340.5029610656875,
-  "cell_reference": "D2",
-  "sheet_name": "",
-  "business_context": "Total Gross Written Premium (GWP) for Agency channel in FY25"
- },
- {
-  "value": 1814.2114689999999,
-  "cell_reference": "C3",
-  "sheet_name": "",
-  "business_context": "Total Gross Written Premium (GWP) for Axis Bank channel in FY24"
- },
- {
-  "value": 2040.3700026021356,
-  "cell_reference": "D3",
-  "sheet_name": "",
-  "business_context": "Total Gross Written Premium (GWP) for Axis Bank channel in FY25"
- },
- {
-  "value": 3220.94,
-  "cell_reference": "C4",
-  "sheet_name": "",
-  "business_context": "Total Gross Written Premium (GWP) for HDFC Bank channel in FY24"
- },
- {
-  "value": 4695.941061232712,
-  "cell_reference": "D4",
-  "sheet_name": "",
-  "business_context": "Total Gross Written Premium (GWP) for HDFC Bank channel in FY25"
+  "business_context": "Growth Rate of Total GWP from FY23 to FY24"
  },
  {
   "value": "1916.15",
   "cell_reference": "B8",
   "sheet_name": "",
-  "business_context": "Total FY24 revenue across all channels."
- },
- {
-  "value": 16046.626194025454,
-  "cell_reference": "B10",
-  "sheet_name": "",
-  "business_context": "Total Gross Written Premium (GWP) across all channels in FY23"
+  "business_context": "Total FY24 revenue across all channels"
  },
  {
   "value": "820.09",
   "cell_reference": "C3",
   "sheet_name": "",
-  "business_context": "FY25 revenue for the Proprietary channel."
+  "business_context": "FY25 revenue from Proprietary channel"
  },
  {
   "value": "628.02",
   "cell_reference": "B4",
   "sheet_name": "",
-  "business_context": "FY24 revenue for the Banks channel."
+  "business_context": "FY24 revenue from Banks channel"
  },
  {
-  "value": 3736.7918473232244,
-  "cell_reference": "B2",
+  "value": "453.07",
+  "cell_reference": "B6",
   "sheet_name": "",
-  "business_context": "Total Gross Written Premium (GWP) for Agency channel in FY23"
- },
- {
-  "value": 1520.00699868,
-  "cell_reference": "B3",
-  "sheet_name": "",
-  "business_context": "Total Gross Written Premium (GWP) for Axis Bank channel in FY23"
- },
- {
-  "value": 2512.1776360500003,
-  "cell_reference": "B4",
-  "sheet_name": "",
-  "business_context": "Total Gross Written Premium (GWP) for HDFC Bank channel in FY23"
+  "business_context": "FY24 revenue from CA/Brokers channel"
  },
  {
   "value": "2758.78",
   "cell_reference": "C8",
   "sheet_name": "",
-  "business_context": "Total FY25 revenue across all channels."
+  "business_context": "Total FY25 revenue across all channels"
  },
  {
-  "value": "595.55",
-  "cell_reference": "B3",
+  "value": 27852.363327880852,
+  "cell_reference": "D10",
   "sheet_name": "",
-  "business_context": "FY24 revenue for the Proprietary channel."
+  "business_context": "Total GWP for FY25."
  },
  {
   "value": "888.16",
   "cell_reference": "C4",
   "sheet_name": "",
-  "business_context": "FY25 revenue for the Banks channel."
- },
- {
-  "value": "239.51",
-  "cell_reference": "B5",
-  "sheet_name": "",
-  "business_context": "FY24 revenue for the Digital channel."
+  "business_context": "FY25 revenue from Banks channel"
  },
  {
   "value": "470.89",
   "cell_reference": "C5",
   "sheet_name": "",
-  "business_context": "FY25 revenue for the Digital channel."
+  "business_context": "FY25 revenue from Digital channel"
  },
  {
-  "value": "19.70",
-  "cell_reference": "B7",
+  "value": "579.64",
+  "cell_reference": "C6",
   "sheet_name": "",
-  "business_context": "FY24 revenue for the Rural channel."
+  "business_context": "FY25 revenue from CA/Brokers channel"
+ },
+ {
+  "value": "595.55",
+  "cell_reference": "B3",
+  "sheet_name": "",
+  "business_context": "FY24 revenue from Proprietary channel"
+ },
+ {
+  "value": "239.51",
+  "cell_reference": "B5",
+  "sheet_name": "",
+  "business_context": "FY24 revenue from Digital channel"
+ },
+ {
+  "value": 2930.3228910000003,
+  "cell_reference": "C8",
+  "sheet_name": "",
+  "business_context": "FY24 GWP (Gross Written Premium) for DOT (Digital Channel)."
+ },
+ {
+  "value": 5569.328997120483,
+  "cell_reference": "D8",
+  "sheet_name": "",
+  "business_context": "FY25 GWP (Gross Written Premium) for DOT (Digital Channel)."
+ },
+ {
+  "value": 19358.539308180567,
+  "cell_reference": "C10",
+  "sheet_name": "",
+  "business_context": "Total GWP for FY24."
+ },
+ {
+  "value": 5420.3460319999995,
+  "cell_reference": "C2",
+  "sheet_name": "",
+  "business_context": "FY24 GWP (Gross Written Premium) for the Agency channel."
+ },
+ {
+  "value": 7340.5029610656875,
+  "cell_reference": "D2",
+  "sheet_name": "",
+  "business_context": "FY25 GWP (Gross Written Premium) for the Agency channel."
+ },
+ {
+  "value": 2746.6529780638566,
+  "cell_reference": "B8",
+  "sheet_name": "",
+  "business_context": "FY23 GWP (Gross Written Premium) for DOT (Digital Channel)."
  },
  {
   "value": "26.46",
   "cell_reference": "C7",
   "sheet_name": "",
-  "business_context": "FY25 revenue for the Rural channel."
+  "business_context": "FY25 revenue from Rural channel"
+ },
+ {
+  "value": "19.70",
+  "cell_reference": "B7",
+  "sheet_name": "",
+  "business_context": "FY24 revenue from Rural channel"
+ },
+ {
+  "value": 197.02412128668868,
+  "cell_reference": "C9",
+  "sheet_name": "",
+  "business_context": "FY24 GWP (Gross Written Premium) for Rural Channel."
+ },
+ {
+  "value": 264.5893723801483,
+  "cell_reference": "D9",
+  "sheet_name": "",
+  "business_context": "FY25 GWP (Gross Written Premium) for Rural Channel."
+ },
+ {
+  "value": 16046.626194025454,
+  "cell_reference": "B10",
+  "sheet_name": "",
+  "business_context": "Total GWP for FY23."
+ },
+ {
+  "value": 3736.7918473232244,
+  "cell_reference": "B2",
+  "sheet_name": "",
+  "business_context": "FY23 GWP (Gross Written Premium) for the Agency channel."
+ },
+ {
+  "value": 1814.2114689999999,
+  "cell_reference": "C3",
+  "sheet_name": "",
+  "business_context": "FY24 GWP (Gross Written Premium) for Axis Bank."
+ },
+ {
+  "value": 2040.3700026021356,
+  "cell_reference": "D3",
+  "sheet_name": "",
+  "business_context": "FY25 GWP (Gross Written Premium) for Axis Bank."
+ },
+ {
+  "value": 3220.94,
+  "cell_reference": "C4",
+  "sheet_name": "",
+  "business_context": "FY24 GWP (Gross Written Premium) for HDFC Bank."
+ },
+ {
+  "value": 4695.941061232712,
+  "cell_reference": "D4",
+  "sheet_name": "",
+  "business_context": "FY25 GWP (Gross Written Premium) for HDFC Bank."
+ },
+ {
+  "value": 856.7510210198571,
+  "cell_reference": "B9",
+  "sheet_name": "",
+  "business_context": "FY23 GWP (Gross Written Premium) for Rural Channel."
+ },
+ {
+  "value": 1520.00699868,
+  "cell_reference": "B3",
+  "sheet_name": "",
+  "business_context": "FY23 GWP (Gross Written Premium) for Axis Bank."
+ },
+ {
+  "value": 2512.1776360500003,
+  "cell_reference": "B4",
+  "sheet_name": "",
+  "business_context": "FY23 GWP (Gross Written Premium) for HDFC Bank."
  }
 ]
 

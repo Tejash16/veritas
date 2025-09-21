@@ -81,14 +81,14 @@ function App() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <div className="text-center">
-            <h1 className="text-4xl font-extrabold text-gray-900">Veritas</h1>
-            <p className="text-lg text-blue-600 font-semibold">AI Auditor</p>
+            <h1 className="text-4xl font-extrabold text-gray-900">Veritas - Document Auditor</h1>
+            <p className="text-lg text-blue-600 font-semibold">Powered by Orbicle Labs </p>
           </div>
           <h2 className="mt-6 text-center text-2xl font-bold text-gray-900">
             Sign in to your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Enterprise presentation validation platform
+            Created with ❤️ by <a href="https://docrack.ai" className="font-medium text-blue-600 hover:text-blue-500">Orbicle Labs</a>
           </p>
         </div>
 
@@ -97,7 +97,7 @@ function App() {
             <LoginForm onLogin={handleLogin} loading={loading} />
             
             {/* Demo Credentials */}
-            <div className="mt-6 p-4 bg-blue-50 rounded-md">
+            {/* <div className="mt-6 p-4 bg-blue-50 rounded-md">
               <p className="text-sm font-medium text-blue-900 mb-2">Demo Credentials:</p>
               <div className="text-sm text-blue-800 space-y-1">
                 <p><strong>Username:</strong> demo</p>
@@ -106,7 +106,7 @@ function App() {
                   Or use admin/admin123 for administrator access
                 </p>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
         <Toaster position="top-right" />
@@ -222,13 +222,13 @@ const LoginForm = ({ onLogin, loading }) => {
       </div>
 
       <div className="flex items-center justify-between">
-        <button
+        {/* <button
           type="button"
           onClick={fillDemoCredentials}
           className="text-sm text-blue-600 hover:text-blue-500"
         >
           Use demo credentials
-        </button>
+        </button> */}
       </div>
 
       <div>
