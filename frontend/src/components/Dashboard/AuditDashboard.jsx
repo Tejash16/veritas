@@ -246,7 +246,7 @@ const AuditDashboard = () => {
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Validation Results</h3>
                   <div className="h-64">
-                    <Pie
+                    {chartData?.pieData && <Pie
                       data={chartData.pieData}
                       options={{
                         responsive: true,
@@ -257,14 +257,14 @@ const AuditDashboard = () => {
                           },
                         },
                       }}
-                    />
+                    />}
                   </div>
                 </div>
 
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Quality Metrics</h3>
                   <div className="h-64">
-                    <Bar
+                    {chartData?.barData && <Bar
                       data={chartData.barData}
                       options={{
                         responsive: true,
@@ -276,7 +276,7 @@ const AuditDashboard = () => {
                           },
                         },
                       }}
-                    />
+                    />}
                   </div>
                 </div>
               </div>
@@ -285,7 +285,8 @@ const AuditDashboard = () => {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="text-lg font-medium text-blue-900 mb-2">Recommendations</h3>
                 <ul className="space-y-1">
-                  {auditResults.recommendations.map((recommendation, index) => (
+                  {/* Add a check here for auditResults.recommendations */}
+                  {auditResults.recommendations && auditResults.recommendations.map((recommendation, index) => (
                     <li key={index} className="text-sm text-blue-800">
                       • {recommendation}
                     </li>
@@ -296,7 +297,8 @@ const AuditDashboard = () => {
           )}
 
           {selectedTab === 'discrepancies' && (
-            <DiscrepancyList discrepancies={auditResults.detailed_results} />
+            // Add a check here for auditResults.detailed_results
+            <DiscrepancyList discrepancies={auditResults.detailed_results || []} />
           )}
 
           {selectedTab === 'metrics' && (

@@ -1,41 +1,56 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8005/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8008/api';
 
-class ApiService {
+class EnhancedApiService {
   constructor() {
     this.client = axios.create({
       baseURL: API_BASE_URL,
-      timeout: 60000, // Increased timeout for AI operations
+      timeout: 300000, // 5 minutes for comprehensive AI operations
     });
 
-    // Request interceptor to add auth token
+    // Request interceptor
     this.client.interceptors.request.use(
       (config) => {
         const token = localStorage.getItem('veritas_token');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
+        
+        console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`, {
+          data: config.data,
+          params: config.params
+        });
+        
         return config;
       },
-      (error) => Promise.reject(error)
+      (error) => {
+        console.error('[API] Request error:', error);
+        return Promise.reject(error);
+      }
     );
 
-    // Response interceptor for error handling
+    // Response interceptor
     this.client.interceptors.response.use(
-      (response) => response.data,
+      (response) => {
+        console.log(`[API] Response:`, response.data);
+        return response.data;
+      },
       (error) => {
+        console.error('[API] Response error:', error);
+        
         if (error.response?.status === 401) {
           localStorage.removeItem('veritas_token');
           window.location.href = '/';
         }
+        
         const message = error.response?.data?.detail || error.message || 'An error occurred';
         throw new Error(message);
       }
     );
   }
 
-  // Authentication - Updated to match backend
+  // Authentication
   async login(credentials) {
     const response = await this.client.post('/auth/login', credentials);
     return response;
@@ -46,7 +61,7 @@ class ApiService {
     return response;
   }
 
-  // Document upload and processing - Fixed to match backend
+  // Enhanced document operations
   async uploadDocuments(formData) {
     const response = await this.client.post('/upload/documents', formData, {
       headers: {
@@ -56,29 +71,46 @@ class ApiService {
     return response;
   }
 
+  // Processing - Direct Validation Approach
   async processDocuments(sessionId) {
-    const response = await this.client.post(`/process/${sessionId}`);
+    const response = await this.client.post(`/process/comprehensive/${sessionId}`);
     return response;
   }
 
-  async suggestMappings(sessionId) {
-    const response = await this.client.post(`/ai/suggest-mappings/${sessionId}`);
+  async processDocumentsComprehensive(sessionId) {
+    const response = await this.client.post(`/process/comprehensive/${sessionId}`);
     return response;
   }
 
-  // Audit operations - Fixed to match backend
-  async createAuditSession(request) {
-    const response = await this.client.post('/audit/create', request);
+  // Direct Validation Operations
+  async getValidationData(sessionId) {
+    const response = await this.client.get(`/validation/data/${sessionId}`);
     return response;
   }
 
-  async runAudit(auditSessionId) {
-    const response = await this.client.post(`/audit/run/${auditSessionId}`);
+  async updatePdfValue(sessionId, valueData) {
+    const response = await this.client.post(`/validation/update-pdf-value/${sessionId}`, valueData);
     return response;
   }
 
+  async updateExcelValue(sessionId, valueData) {
+    const response = await this.client.post(`/validation/update-excel-value/${sessionId}`, valueData);
+    return response;
+  }
+
+  async startDirectAudit(sessionId) {
+    const response = await this.client.post(`/validation/start-direct-audit/${sessionId}`);
+    return response;
+  }
+
+  async getValidationStatus(sessionId) {
+    const response = await this.client.get(`/validation/status/${sessionId}`);
+    return response;
+  }
+
+  // Audit Results
   async getAuditResults(auditSessionId) {
-    const response = await this.client.get(`/audit/${auditSessionId}`);
+    const response = await this.client.get(`/audit/results/${auditSessionId}`);
     return response;
   }
 
@@ -95,4 +127,9 @@ class ApiService {
   }
 }
 
-export const apiService = new ApiService();
+// Export both names for backward compatibility
+const apiService = new EnhancedApiService();
+const enhancedApiService = apiService;
+
+export { apiService, enhancedApiService };
+export default apiService;

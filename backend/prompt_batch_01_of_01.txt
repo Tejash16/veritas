@@ -1,0 +1,418 @@
+
+    You are auditing presentation values against Excel source data.
+
+    BATCH 1/1 - PDF VALUES TO VALIDATE:
+    [
+ {
+  "id": "value_1_001",
+  "value": "44%",
+  "normalized_value": "0.44",
+  "data_type": "percentage",
+  "business_context": "Year-over-year growth percentage of Retail GWP from FY24 to FY25."
+ },
+ {
+  "id": "value_1_002",
+  "value": "2759",
+  "normalized_value": "2759",
+  "data_type": "metric",
+  "business_context": "Retail GWP in FY25 (Crores)"
+ },
+ {
+  "id": "value_1_003",
+  "value": "1916",
+  "normalized_value": "1916",
+  "data_type": "metric",
+  "business_context": "Retail GWP in FY24 (Crores)"
+ },
+ {
+  "id": "value_1_004",
+  "value": "820",
+  "normalized_value": "820",
+  "data_type": "metric",
+  "business_context": "Proprietary Channel Retail GWP in FY25 (Crores)"
+ },
+ {
+  "id": "value_1_005",
+  "value": "38%",
+  "normalized_value": "0.38",
+  "data_type": "percentage",
+  "business_context": "YoY growth of proprietary channels"
+ },
+ {
+  "id": "value_1_006",
+  "value": "596",
+  "normalized_value": "596",
+  "data_type": "metric",
+  "business_context": "Proprietary Channel Retail GWP in FY24 (Crores)"
+ },
+ {
+  "id": "value_1_007",
+  "value": "898",
+  "normalized_value": "898",
+  "data_type": "metric",
+  "business_context": "Banks Retail GWP in FY25 (Crores)"
+ },
+ {
+  "id": "value_1_008",
+  "value": "45%",
+  "normalized_value": "0.45",
+  "data_type": "percentage",
+  "business_context": "YoY growth of Banks"
+ },
+ {
+  "id": "value_1_009",
+  "value": "628",
+  "normalized_value": "628",
+  "data_type": "metric",
+  "business_context": "Banks Retail GWP in FY24 (Crores)"
+ },
+ {
+  "id": "value_1_010",
+  "value": "471",
+  "normalized_value": "471",
+  "data_type": "metric",
+  "business_context": "Digital Retail GWP in FY25 (Crores)"
+ },
+ {
+  "id": "value_1_011",
+  "value": "97%",
+  "normalized_value": "0.97",
+  "data_type": "percentage",
+  "business_context": "YoY growth of Digital"
+ },
+ {
+  "id": "value_1_012",
+  "value": "250",
+  "normalized_value": "250",
+  "data_type": "metric",
+  "business_context": "Digital Retail GWP in FY24 (Crores)"
+ },
+ {
+  "id": "value_1_013",
+  "value": "580",
+  "normalized_value": "580",
+  "data_type": "metric",
+  "business_context": "CA/Brokers Retail GWP in FY25 (Crores)"
+ },
+ {
+  "id": "value_1_014",
+  "value": "30%",
+  "normalized_value": "0.3",
+  "data_type": "percentage",
+  "business_context": "YoY growth of CA/Brokers"
+ },
+ {
+  "id": "value_1_015",
+  "value": "453",
+  "normalized_value": "453",
+  "data_type": "metric",
+  "business_context": "CA/Brokers Retail GWP in FY24 (Crores)"
+ },
+ {
+  "id": "value_1_016",
+  "value": "FY24",
+  "normalized_value": "2024",
+  "data_type": "date",
+  "business_context": "Fiscal Year 2024"
+ },
+ {
+  "id": "value_1_017",
+  "value": "FY25",
+  "normalized_value": "2025",
+  "data_type": "date",
+  "business_context": "Fiscal Year 2025"
+ },
+ {
+  "id": "value_1_018",
+  "value": "FY25",
+  "normalized_value": "2025",
+  "data_type": "date",
+  "business_context": "Fiscal Year 2025"
+ },
+ {
+  "id": "value_1_019",
+  "value": "2,447",
+  "normalized_value": "2447",
+  "data_type": "currency",
+  "business_context": "Retail GWP2 at Rs. 2,447 crore"
+ },
+ {
+  "id": "value_1_020",
+  "value": "28%",
+  "normalized_value": "0.28",
+  "data_type": "percentage",
+  "business_context": "Year-over-year growth"
+ },
+ {
+  "id": "value_1_021",
+  "value": "26%",
+  "normalized_value": "0.26",
+  "data_type": "percentage",
+  "business_context": "26% increase in Agent count"
+ }
+]
+
+    RELEVANT EXCEL VALUES TO SEARCH AGAINST (showing 37 of 37 total):
+    [
+ {
+  "value": "0.966",
+  "cell_reference": "D5",
+  "sheet_name": "",
+  "business_context": "Growth rate of Digital channel revenue from FY24 to FY25"
+ },
+ {
+  "value": "0.377",
+  "cell_reference": "D3",
+  "sheet_name": "",
+  "business_context": "Growth rate of Proprietary channel revenue from FY24 to FY25"
+ },
+ {
+  "value": "0.414",
+  "cell_reference": "D4",
+  "sheet_name": "",
+  "business_context": "Growth rate of Banks channel revenue from FY24 to FY25"
+ },
+ {
+  "value": "0.279",
+  "cell_reference": "D6",
+  "sheet_name": "",
+  "business_context": "Growth rate of CA/Brokers channel revenue from FY24 to FY25"
+ },
+ {
+  "value": "(27852.363327880852/19358.539308180567) - 1",
+  "cell_reference": "D10/C10 - 1",
+  "sheet_name": "",
+  "business_context": "Projected Growth Rate of Total GWP from FY24 to FY25"
+ },
+ {
+  "value": "0.343",
+  "cell_reference": "D7",
+  "sheet_name": "",
+  "business_context": "Growth rate of Rural channel revenue from FY24 to FY25"
+ },
+ {
+  "value": "(19358.539308180567/16046.626194025454) - 1",
+  "cell_reference": "C10/B10 - 1",
+  "sheet_name": "",
+  "business_context": "Growth Rate of Total GWP from FY23 to FY24"
+ },
+ {
+  "value": "1916.15",
+  "cell_reference": "B8",
+  "sheet_name": "",
+  "business_context": "Total FY24 revenue across all channels"
+ },
+ {
+  "value": "820.09",
+  "cell_reference": "C3",
+  "sheet_name": "",
+  "business_context": "FY25 revenue from Proprietary channel"
+ },
+ {
+  "value": "628.02",
+  "cell_reference": "B4",
+  "sheet_name": "",
+  "business_context": "FY24 revenue from Banks channel"
+ },
+ {
+  "value": "453.07",
+  "cell_reference": "B6",
+  "sheet_name": "",
+  "business_context": "FY24 revenue from CA/Brokers channel"
+ },
+ {
+  "value": "2758.78",
+  "cell_reference": "C8",
+  "sheet_name": "",
+  "business_context": "Total FY25 revenue across all channels"
+ },
+ {
+  "value": 27852.363327880852,
+  "cell_reference": "D10",
+  "sheet_name": "",
+  "business_context": "Total GWP for FY25."
+ },
+ {
+  "value": "888.16",
+  "cell_reference": "C4",
+  "sheet_name": "",
+  "business_context": "FY25 revenue from Banks channel"
+ },
+ {
+  "value": "470.89",
+  "cell_reference": "C5",
+  "sheet_name": "",
+  "business_context": "FY25 revenue from Digital channel"
+ },
+ {
+  "value": "579.64",
+  "cell_reference": "C6",
+  "sheet_name": "",
+  "business_context": "FY25 revenue from CA/Brokers channel"
+ },
+ {
+  "value": "595.55",
+  "cell_reference": "B3",
+  "sheet_name": "",
+  "business_context": "FY24 revenue from Proprietary channel"
+ },
+ {
+  "value": "239.51",
+  "cell_reference": "B5",
+  "sheet_name": "",
+  "business_context": "FY24 revenue from Digital channel"
+ },
+ {
+  "value": 2930.3228910000003,
+  "cell_reference": "C8",
+  "sheet_name": "",
+  "business_context": "FY24 GWP (Gross Written Premium) for DOT (Digital Channel)."
+ },
+ {
+  "value": 5569.328997120483,
+  "cell_reference": "D8",
+  "sheet_name": "",
+  "business_context": "FY25 GWP (Gross Written Premium) for DOT (Digital Channel)."
+ },
+ {
+  "value": 19358.539308180567,
+  "cell_reference": "C10",
+  "sheet_name": "",
+  "business_context": "Total GWP for FY24."
+ },
+ {
+  "value": 5420.3460319999995,
+  "cell_reference": "C2",
+  "sheet_name": "",
+  "business_context": "FY24 GWP (Gross Written Premium) for the Agency channel."
+ },
+ {
+  "value": 7340.5029610656875,
+  "cell_reference": "D2",
+  "sheet_name": "",
+  "business_context": "FY25 GWP (Gross Written Premium) for the Agency channel."
+ },
+ {
+  "value": 2746.6529780638566,
+  "cell_reference": "B8",
+  "sheet_name": "",
+  "business_context": "FY23 GWP (Gross Written Premium) for DOT (Digital Channel)."
+ },
+ {
+  "value": "26.46",
+  "cell_reference": "C7",
+  "sheet_name": "",
+  "business_context": "FY25 revenue from Rural channel"
+ },
+ {
+  "value": "19.70",
+  "cell_reference": "B7",
+  "sheet_name": "",
+  "business_context": "FY24 revenue from Rural channel"
+ },
+ {
+  "value": 197.02412128668868,
+  "cell_reference": "C9",
+  "sheet_name": "",
+  "business_context": "FY24 GWP (Gross Written Premium) for Rural Channel."
+ },
+ {
+  "value": 264.5893723801483,
+  "cell_reference": "D9",
+  "sheet_name": "",
+  "business_context": "FY25 GWP (Gross Written Premium) for Rural Channel."
+ },
+ {
+  "value": 16046.626194025454,
+  "cell_reference": "B10",
+  "sheet_name": "",
+  "business_context": "Total GWP for FY23."
+ },
+ {
+  "value": 3736.7918473232244,
+  "cell_reference": "B2",
+  "sheet_name": "",
+  "business_context": "FY23 GWP (Gross Written Premium) for the Agency channel."
+ },
+ {
+  "value": 1814.2114689999999,
+  "cell_reference": "C3",
+  "sheet_name": "",
+  "business_context": "FY24 GWP (Gross Written Premium) for Axis Bank."
+ },
+ {
+  "value": 2040.3700026021356,
+  "cell_reference": "D3",
+  "sheet_name": "",
+  "business_context": "FY25 GWP (Gross Written Premium) for Axis Bank."
+ },
+ {
+  "value": 3220.94,
+  "cell_reference": "C4",
+  "sheet_name": "",
+  "business_context": "FY24 GWP (Gross Written Premium) for HDFC Bank."
+ },
+ {
+  "value": 4695.941061232712,
+  "cell_reference": "D4",
+  "sheet_name": "",
+  "business_context": "FY25 GWP (Gross Written Premium) for HDFC Bank."
+ },
+ {
+  "value": 856.7510210198571,
+  "cell_reference": "B9",
+  "sheet_name": "",
+  "business_context": "FY23 GWP (Gross Written Premium) for Rural Channel."
+ },
+ {
+  "value": 1520.00699868,
+  "cell_reference": "B3",
+  "sheet_name": "",
+  "business_context": "FY23 GWP (Gross Written Premium) for Axis Bank."
+ },
+ {
+  "value": 2512.1776360500003,
+  "cell_reference": "B4",
+  "sheet_name": "",
+  "business_context": "FY23 GWP (Gross Written Premium) for HDFC Bank."
+ }
+]
+
+    For EACH PDF value (process them in order):
+    1. FIRST try to directly match against Excel values
+    2. If no direct match, check if it's a derived metric (growth rate, percentage, ratio).For example 44% Year-over-year growth represented by the separate cells with values 1916 to 2759.((2759-1916)/(1916)*100=44%)
+    3. For derived metrics, attempt calculation using relevant Excel data
+    4. Assign appropriate validation status
+
+    CRITICAL: Process PDF values IN THE ORDER THEY APPEAR in the input list.
+
+    Return ONLY valid JSON:
+    {
+        "batch_results": [
+            {
+                "pdf_value_id": "value_1_001",
+                "pdf_value": "2759",
+                "pdf_context": "FY25 revenue growth",
+                "validation_status": "matched|mismatched|unverifiable",
+                "excel_match": {
+                    "source_cell": "Sheet1!B5",
+                    "excel_value": "2759",
+                    "match_confidence": 0.95,
+                    "calculation_basis": "direct_match|calculated|inferred"
+                },
+                "confidence": 0.95,
+                "audit_reasoning": "Detailed explanation including calculation steps if applicable"
+            }
+        ]
+    }
+
+    Validation Status Guide(Only these 3 validation status is allowed):
+    - matched: Exact or equivalent value found, match_confidence greater than 0.90. Calculated values also have validation status as matched. PDF or Excel match also fall under this category. excel_match or pdf_match should also have validation status as matched
+    - mismatched: Different values but related context  
+    - unverifiable: Cannot verify relationship. Also when the value is only present in pdf
+
+    IMPORTANT RULES:
+    1. Return EXACTLY 21 results, one for each PDF value IN ORDER
+    2. For calculated values, set the validation_status as matched and show the calculation in audit_reasoning
+    3. Return ONLY valid JSON, no other text
+    

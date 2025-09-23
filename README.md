@@ -68,3 +68,99 @@ API documentation is available at `http://localhost:8000/docs` when running the 
 ## License
 
 Enterprise License - Contact for commercial use
+```
+Veritas-Agent
+├─ backend
+│  ├─ app
+│  │  ├─ api
+│  │  │  ├─ audit.py
+│  │  │  ├─ auth.py
+│  │  │  ├─ reports.py
+│  │  │  ├─ upload.py
+│  │  │  └─ __init__.py
+│  │  ├─ config.py
+│  │  ├─ database
+│  │  │  ├─ database.py
+│  │  │  └─ __init__.py
+│  │  ├─ database.py
+│  │  ├─ main.py
+│  │  ├─ models
+│  │  │  ├─ audit.py
+│  │  │  ├─ document.py
+│  │  │  ├─ user.py
+│  │  │  └─ __init__.py
+│  │  ├─ services
+│  │  │  ├─ ai_service.py
+│  │  │  ├─ audit_service.py
+│  │  │  ├─ enhanced_ai_service.py
+│  │  │  ├─ enhanced_pdf_service.py
+│  │  │  ├─ excel_service.py
+│  │  │  ├─ mapping_service.py
+│  │  │  ├─ pdf_service.py
+│  │  │  ├─ report_service.py
+│  │  │  └─ __init__.py
+│  │  ├─ utils
+│  │  │  ├─ file_handler.py
+│  │  │  ├─ metrics.py
+│  │  │  ├─ security.py
+│  │  │  └─ __init__.py
+│  │  └─ __init__.py
+│  ├─ Dockerfile
+│  ├─ requirements.txt
+│  ├─ temp_reports
+│  └─ test_env.py
+├─ docker-compose.yml
+├─ docs
+│  ├─ API_DOCUMENTATION.md
+│  ├─ SYSTEM_OVERVIEW.md
+│  ├─ TROUBLESHOOTING.md
+│  └─ USER_GUIDE.md
+├─ frontend
+│  ├─ package-lock.json
+│  ├─ package.json
+│  ├─ postcss.config.js
+│  ├─ src
+│  │  ├─ App.css
+│  │  ├─ App.jsx
+│  │  ├─ components
+│  │  │  ├─ Common
+│  │  │  │  ├─ ErrorBoundary.jsx
+│  │  │  │  ├─ Header.jsx
+│  │  │  │  └─ LoadingSpinner.jsx
+│  │  │  ├─ Dashboard
+│  │  │  │  ├─ AuditDashboard.jsx
+│  │  │  │  ├─ DiscrepancyList.jsx
+│  │  │  │  └─ MetricsPanel.jsx
+│  │  │  ├─ Preview
+│  │  │  │  └─ EnhancedDocumentPreview.jsx
+│  │  │  ├─ Reports
+│  │  │  │  ├─ ReportGenerator.jsx
+│  │  │  │  └─ ReportViewer.jsx
+│  │  │  ├─ Upload
+│  │  │  │  ├─ EnhancedMappingValidation.jsx
+│  │  │  │  ├─ FileUpload.jsx
+│  │  │  │  └─ MappingConfirmation.jsx
+│  │  │  └─ Viewer
+│  │  │     ├─ DocumentViewer.jsx
+│  │  │     ├─ ExcelViewer.jsx
+│  │  │     └─ PDFViewer.jsx
+│  │  ├─ hooks
+│  │  │  ├─ useAudit.js
+│  │  │  └─ useAuth.js
+│  │  ├─ index.css
+│  │  ├─ index.js
+│  │  ├─ services
+│  │  │  ├─ api.js
+│  │  │  ├─ auth.js
+│  │  │  └─ fileService.js
+│  │  └─ utils
+│  │     ├─ constants.js
+│  │     └─ helpers.js
+│  └─ tailwind.config.js
+├─ README.md
+└─ scripts
+   ├─ build.bat
+   ├─ run-dev.bat
+   └─ setup.bat
+
+```
