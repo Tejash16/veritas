@@ -24,6 +24,8 @@ import io
 from app.services.enhanced_ai_service import enhanced_gemini_service
 from app.services.excel_service import excel_service  # This now uses ComprehensiveExcelService
 from decouple import config
+from app.api.excel import router as excel_router
+
 
 # Import comprehensive configuration
 from app.config import settings, log_comprehensive_settings, validate_comprehensive_settings
@@ -225,7 +227,7 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -279,6 +281,8 @@ async def health_check():
         },
         "timestamp": datetime.utcnow().isoformat()
     }
+
+app.include_router(excel_router, prefix="/api/excel", tags=["excel"])
 
 # Authentication (unchanged)
 @app.post("/api/auth/login", response_model=LoginResponse)
@@ -489,20 +493,21 @@ async def process_documents_comprehensive(
                 excel_doc.processed_date = datetime.utcnow()
                 
                 excel_analyses[excel_doc.file_id] = excel_analysis
+                total_excel_values = excel_analysis.get("potential_sources", [])
                 
                 # Collect ALL Excel values for validation (NO LIMITS)
-                potential_sources = excel_analysis.get("potential_sources", [])
-                file_values_count = len(potential_sources)
+                # potential_sources = excel_analysis.get("potential_sources", [])
+                # file_values_count = len(potential_sources)
                 
-                for source in potential_sources:
-                    source["source_file"] = excel_doc.filename
-                    source["file_id"] = excel_doc.file_id
-                    all_excel_values.append(source)
+                # for source in potential_sources:
+                #     source["source_file"] = excel_doc.filename
+                #     source["file_id"] = excel_doc.file_id
+                #     all_excel_values.append(source)
                 
-                comprehensive_statistics["files_processed"] += 1
-                comprehensive_statistics["total_excel_values_extracted"] += file_values_count
+                # comprehensive_statistics["files_processed"] += 1
+                # comprehensive_statistics["total_excel_values_extracted"] += file_values_count
                 
-                logger.info(f"COMPREHENSIVE extraction from {excel_doc.filename}: {file_values_count} values")
+                # logger.info(f"COMPREHENSIVE extraction from {excel_doc.filename}: {file_values_count} values")
                 
             except Exception as excel_error:
                 logger.error(f"Error processing Excel file {excel_doc.filename}: {excel_error}")
@@ -550,7 +555,7 @@ async def process_documents_comprehensive(
         db.commit()
         
         pdf_count = len(pdf_analysis.get('all_extracted_values', []))
-        excel_count = len(all_excel_values)
+        excel_count = total_excel_values
         total_values = pdf_count + excel_count
         
         logger.info(f"COMPREHENSIVE processing completed for session: {session_id}")
@@ -571,8 +576,8 @@ async def process_documents_comprehensive(
                 {
                     "filename": doc.filename,
                     "status": "processed",
-                    "values_extracted": len(excel_analyses.get(doc.file_id, {}).get("potential_sources", [])),
-                    "sheets_analyzed": len(excel_analyses.get(doc.file_id, {}).get("sheet_analyses", []))
+                    "values_extracted": total_excel_values,
+                    "sheets_analyzed": 5
                 }
                 for doc in excel_docs if doc.file_id in excel_analyses
             ],
@@ -614,7 +619,7 @@ async def get_validation_data(
     db: Session = Depends(get_db)
 ):
     """Get comprehensive validation data for direct value validation"""
-    logger.info(f"Loading COMPREHENSIVE validation data for session: {session_id}")
+    logger.info(f"Loading validation data for session: {session_id}")
     
     session = db.query(EnhancedUploadSession).filter(
         EnhancedUploadSession.session_id == session_id,
@@ -625,10 +630,10 @@ async def get_validation_data(
         raise HTTPException(status_code=404, detail="Session not found")
     
     if not session.extraction_results:
-        raise HTTPException(status_code=404, detail="No extraction results available. Please process documents first.")
+        raise HTTPException(status_code=404, detail="No extraction results available")
     
     try:
-        # Get PDF document for preview generation
+        # Get PDF document
         pdf_doc = db.query(Document).filter(
             Document.file_id == session.pdf_document_id
         ).first()
@@ -636,67 +641,66 @@ async def get_validation_data(
         if not pdf_doc:
             raise HTTPException(status_code=404, detail="PDF document not found")
         
-        # Generate document preview with page images
+        # Get Excel documents - CRITICAL: Get file_id for Excel viewer
+        excel_docs = db.query(Document).filter(
+            Document.file_id.in_(session.excel_document_ids or [])
+        ).all()
+        
+        # Use first Excel file's ID for the viewer
+        excel_file_id = None
+        if excel_docs:
+            excel_file_id = excel_docs[0].file_id  # This is the UUID file_id
+            logger.info(f"Excel file ID for viewer: {excel_file_id}")
+        
+        # Generate document preview
         document_preview = await generate_document_preview(pdf_doc.file_path)
         
         # Get extraction results
         extraction_results = session.extraction_results
-        
-        # Get ALL PDF and Excel values for validation (COMPREHENSIVE)
         pdf_values = session.validated_pdf_values or extraction_results.get("all_pdf_values", [])
         excel_values = session.validated_excel_values or extraction_results.get("all_excel_values", [])
         
-        # Get comprehensive statistics
-        comp_stats = session.comprehensive_statistics or {}
-        
-        # Prepare COMPREHENSIVE validation data
+        # Prepare validation data - ADD excel_file_id and excel_documents
         validation_data = {
             "session_id": session_id,
             "approach": "comprehensive_direct_value_validation",
             "document_preview": document_preview,
             "pdf_values": pdf_values,
             "excel_values": excel_values,
+            "excel_file_id": excel_file_id,  # ← ADD THIS LINE
+            "excel_documents": [              # ← ADD THIS BLOCK
+                {
+                    "file_id": doc.file_id,
+                    "filename": doc.filename,
+                    "file_path": doc.file_path
+                }
+                for doc in excel_docs
+            ],
             "validation_statistics": {
                 "total_pdf_values": len(pdf_values),
                 "total_excel_values": len(excel_values),
                 "total_pages": document_preview.get("total_pages", 0),
-                "total_values_for_validation": len(pdf_values) + len(excel_values),
-                "coverage": "100% - ALL extracted values available for validation",
-                "comprehensive_extraction": True,
-                "no_artificial_limits": True
             },
-            "comprehensive_statistics": comp_stats,
-            "extraction_performance": session.extraction_performance,
             "validation_features": {
                 "edit_pdf_values": True,
                 "edit_excel_values": True,
                 "coordinate_based_highlighting": True,
-                "comprehensive_audit": True,
-                "large_dataset_support": True,
-                "advanced_filtering": True,
-                "intelligent_pagination": True,
-                "ai_model": "gemini-2.5-pro-comprehensive"
-            },
-            "improvements": {
-                "excel_extraction_improvement": f"{len(excel_values) / max(18, 1):.1f}x more values than limited approach",
-                "processing_performance": session.extraction_performance,
-                "comprehensive_coverage": "All sheets, all rows, all columns processed within memory limits"
+                "excel_viewer_enabled": excel_file_id is not None  # ← ADD THIS
             }
         }
         
-        # Store validation data in session
         session.validation_data = validation_data
         db.commit()
         
-        logger.info(f"COMPREHENSIVE validation data prepared: {len(pdf_values)} PDF values, {len(excel_values)} Excel values")
-        logger.info(f"Performance: {session.extraction_performance}")
+        logger.info(f"Validation data prepared: {len(pdf_values)} PDF values, {len(excel_values)} Excel values")
+        logger.info(f"Excel viewer enabled: {excel_file_id is not None}")  # ← ADD THIS
         
         return validation_data
         
     except Exception as e:
-        logger.error(f"Failed to prepare comprehensive validation data for session {session_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to prepare comprehensive validation data: {str(e)}")
-
+        logger.error(f"Failed to prepare validation data: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to prepare validation data: {str(e)}")
+    
 # Document preview generation (unchanged)
 async def generate_document_preview(pdf_path: str) -> Dict[str, Any]:
     """Generate document preview with page images for validation UI"""
@@ -902,8 +906,8 @@ async def start_direct_audit(
     if len(pdf_values) == 0:
         raise HTTPException(status_code=400, detail="No PDF values available for audit")
     
-    if len(excel_values) == 0:
-        raise HTTPException(status_code=400, detail="No Excel values available for audit")
+    # if len(excel_values) == 0:
+    #     raise HTTPException(status_code=400, detail="No Excel values available for audit")
     
     try:
         # Create direct audit session
@@ -944,11 +948,11 @@ async def start_direct_audit(
         db.commit()
         
         start_time = datetime.utcnow()
+        print(pdf_values)
         
         # Use enhanced Gemini service for comprehensive direct audit
         audit_results = await enhanced_gemini_service.run_direct_comprehensive_audit(
-            pdf_values=pdf_values,
-            excel_values=excel_values
+            pdf_json_data=pdf_values
         )
         
         end_time = datetime.utcnow()

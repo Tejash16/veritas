@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     # Security
     SECRET_KEY: str = "your-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     
     # AI Services
     GOOGLE_API_KEY: Optional[str] = None
@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     
     # Memory Management
     enable_memory_efficient_processing: bool = True
-    max_memory_usage_mb: int = 1024        # 1GB memory limit
+    max_memory_usage_mb: int = 4028        # 1GB memory limit
     
     # File Storage - Updated for larger files
     UPLOAD_DIR: str = "./uploads"

@@ -7,8 +7,7 @@ const Header = ({ user, onLogout }) => {
   const location = useLocation();
 
   const navigationItems = [
-    { path: '/upload', label: 'Upload', icon: Upload },
-    { path: '/dashboard', label: 'Dashboard', icon: BarChart3 },
+    { path: '/dashboard', label: 'Dashboard', icon: BarChart3 }
   ];
 
   return (

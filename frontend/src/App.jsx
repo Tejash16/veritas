@@ -4,10 +4,7 @@ import toast, { Toaster } from 'react-hot-toast';
 
 // Components
 import Header from './components/Common/Header';
-import FileUpload from './components/Upload/FileUpload';
-import MappingConfirmation from './components/Upload/MappingConfirmation';
 import AuditDashboard from './components/Dashboard/AuditDashboard';
-import ReportViewer from './components/Reports/ReportViewer';
 import ErrorBoundary from './components/Common/ErrorBoundary';
 import LoadingSpinner from './components/Common/LoadingSpinner';
 
@@ -126,13 +123,10 @@ function App() {
               {/* Enhanced Routes */}
               <Route path="/upload" element={<EnhancedFileUpload />} />
               <Route path="/validation/:sessionId" element={<InteractiveValidation />} />
-              {/* Legacy Routes for backward compatibility */}
-              <Route path="/mapping/:sessionId" element={<MappingConfirmation />} />
               <Route path="/audit/:sessionId" element={<AuditDashboard />} />
-              <Route path="/reports/:sessionId" element={<ReportViewer />} />
               <Route path="*" element={<Navigate to="/upload" replace />} />
             </Routes>
-          </main>
+          </main> 
           
           <Toaster 
             position="top-right" 
@@ -222,13 +216,13 @@ const LoginForm = ({ onLogin, loading }) => {
       </div>
 
       <div className="flex items-center justify-between">
-        {/* <button
+        <button
           type="button"
           onClick={fillDemoCredentials}
           className="text-sm text-blue-600 hover:text-blue-500"
         >
           Use demo credentials
-        </button> */}
+        </button>
       </div>
 
       <div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { Pie, Bar } from 'react-chartjs-2';
+import { Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   ArcElement,
@@ -14,8 +14,7 @@ import {
 import { AlertTriangle, CheckCircle, XCircle, Eye, FileText } from 'lucide-react';
 
 import DiscrepancyList from './DiscrepancyList';
-import MetricsPanel from './MetricsPanel';
-
+import Preview from './Preview';
 ChartJS.register(
   ArcElement,
   Tooltip,
@@ -37,6 +36,7 @@ const AuditDashboard = () => {
   useEffect(() => {
     if (location.state?.auditResults) {
       setAuditResults(location.state.auditResults);
+      console.log('[Audit Dashboard] Received audit results:', auditResults);
     }
   }, [location.state]);
 
@@ -65,32 +65,7 @@ const AuditDashboard = () => {
       ]
     };
 
-    const barData = {
-      labels: ['Overall Accuracy', 'Data Quality Score'],
-      datasets: [
-        {
-          label: 'Percentage',
-          data: [
-            auditResults.summary.overall_accuracy,
-            85 // Mock data quality score
-          ],
-          backgroundColor: ['#3B82F6', '#8B5CF6'],
-          borderColor: ['#2563EB', '#7C3AED'],
-          borderWidth: 1
-        }
-      ]
-    };
-
-    return { pieData, barData };
-  };
-
-  const getRiskLevelColor = (risk) => {
-    switch (risk) {
-      case 'low': return 'text-green-600 bg-green-100';
-      case 'medium': return 'text-yellow-600 bg-yellow-100';
-      case 'high': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
+    return { pieData };
   };
 
   if (!auditResults) {
@@ -108,106 +83,70 @@ const AuditDashboard = () => {
       {/* Header */}
       <div className="bg-white shadow rounded-lg">
         <div className="px-4 py-5 sm:p-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col items-center space-y-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Audit Results</h1>
-              <p className="mt-1 text-sm text-gray-600">Session ID: {sessionId}</p>
+              <h1 className="text-2xl font-bold text-gray-900 text-center">Audit Results</h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getRiskLevelColor(auditResults.risk_assessment)}`}>
-                Risk Level: {auditResults.risk_assessment.toUpperCase()}
-              </span>
-              <button
-                onClick={() => navigate(`/reports/${sessionId}`)}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
-              >
-                <FileText className="inline h-4 w-4 mr-2" />
-                Generate Report
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <CheckCircle className="h-6 w-6 text-green-400" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Matched Values
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {auditResults.summary.matched}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <XCircle className="h-6 w-6 text-red-400" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Mismatched Values
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {auditResults.summary.mismatched}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <AlertTriangle className="h-6 w-6 text-yellow-400" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Formatting Errors
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {auditResults.summary.formatting_errors}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="h-6 w-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                  %
+            <div className="flex space-x-4 w-full">
+              {/* Summary Cards in Header */}
+              <div className="bg-white overflow-hidden shadow rounded-lg flex-1">
+                <div className="p-5">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="flex-shrink-0">
+                      <CheckCircle className="h-6 w-6 text-green-400" />
+                    </div>
+                    <div className="mt-3">
+                      <dl>
+                        <dt className="text-sm font-medium text-gray-500">
+                          Matched Values
+                        </dt>
+                        <dd className="text-lg font-medium text-gray-900">
+                          {auditResults.summary.matched}
+                        </dd>
+                      </dl>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Overall Accuracy
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {Math.round(auditResults.summary.overall_accuracy)}%
-                  </dd>
-                </dl>
+
+              <div className="bg-white overflow-hidden shadow rounded-lg flex-1">
+                <div className="p-5">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="flex-shrink-0">
+                      <XCircle className="h-6 w-6 text-red-400" />
+                    </div>
+                    <div className="mt-3">
+                      <dl>
+                        <dt className="text-sm font-medium text-gray-500">
+                          Mismatched Values
+                        </dt>
+                        <dd className="text-lg font-medium text-gray-900">
+                          {auditResults.summary.mismatched}
+                        </dd>
+                      </dl>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white overflow-hidden shadow rounded-lg flex-1">
+                <div className="p-5">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="flex-shrink-0">
+                      <AlertTriangle className="h-6 w-6 text-gray-600" />
+                    </div>
+                    <div className="mt-3">
+                      <dl>
+                        <dt className="text-sm font-medium text-gray-500">
+                          Unverified Values
+                        </dt>
+                        <dd className="text-lg font-medium text-gray-900">
+                          {auditResults.summary.unverifiable}
+                        </dd>
+                      </dl>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -221,7 +160,7 @@ const AuditDashboard = () => {
             {[
               { id: 'overview', name: 'Overview' },
               { id: 'discrepancies', name: 'Discrepancies' },
-              { id: 'metrics', name: 'Metrics' }
+              { id: 'preview', name: 'Preview' }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -242,7 +181,7 @@ const AuditDashboard = () => {
           {selectedTab === 'overview' && (
             <div className="space-y-6">
               {/* Charts */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6">
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Validation Results</h3>
                   <div className="h-64">
@@ -260,49 +199,16 @@ const AuditDashboard = () => {
                     />}
                   </div>
                 </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Quality Metrics</h3>
-                  <div className="h-64">
-                    {chartData?.barData && <Bar
-                      data={chartData.barData}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                          y: {
-                            beginAtZero: true,
-                            max: 100,
-                          },
-                        },
-                      }}
-                    />}
-                  </div>
-                </div>
-              </div>
-
-              {/* Recommendations */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="text-lg font-medium text-blue-900 mb-2">Recommendations</h3>
-                <ul className="space-y-1">
-                  {/* Add a check here for auditResults.recommendations */}
-                  {auditResults.recommendations && auditResults.recommendations.map((recommendation, index) => (
-                    <li key={index} className="text-sm text-blue-800">
-                      • {recommendation}
-                    </li>
-                  ))}
-                </ul>
               </div>
             </div>
           )}
 
           {selectedTab === 'discrepancies' && (
-            // Add a check here for auditResults.detailed_results
             <DiscrepancyList discrepancies={auditResults.detailed_results || []} />
           )}
 
-          {selectedTab === 'metrics' && (
-            <MetricsPanel sessionId={sessionId} />
+          {selectedTab === 'preview' && (
+            <Preview preview={auditResults.detailed_results} sessionId={sessionId} />
           )}
         </div>
       </div>

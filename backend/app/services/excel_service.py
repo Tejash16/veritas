@@ -12,9 +12,9 @@ logger = structlog.get_logger()
 class ComprehensiveExcelService:
     def __init__(self):
         # Configuration for comprehensive extraction
-        self.max_sheets_to_process = 50
-        self.max_rows_per_sheet = 2000   # Increased from 50
-        self.max_cols_per_sheet = 200    # Increased from 20
+        self.max_sheets_to_process = 100
+        self.max_rows_per_sheet = 5000   # Increased from 50
+        self.max_cols_per_sheet = 500    # Increased from 20
         self.memory_efficient_processing = True
     
     async def extract_data_comprehensive(self, file_content: bytes) -> Dict[str, Any]:

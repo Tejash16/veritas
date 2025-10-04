@@ -5,7 +5,7 @@ echo ========================================
 
 :: Start backend server
 echo Starting backend server on port 8000...
-start "Veritas Backend" cmd /k "cd backend && call venv\Scripts\activate.bat && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000"
+start "Veritas Backend" cmd /k "cd backend && call venv\Scripts\activate.bat && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8008"
 
 :: Wait a moment for backend to start
 timeout /t 3 /nobreak >nul

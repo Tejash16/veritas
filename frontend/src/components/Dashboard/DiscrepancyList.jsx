@@ -34,6 +34,7 @@ const DiscrepancyList = ({ discrepancies = [] }) => {
 
   const toggleExpanded = (index) => {
     const newExpanded = new Set(expandedItems);
+    console.log('newExpanded', discrepancies);
     if (newExpanded.has(index)) {
       newExpanded.delete(index);
     } else {
@@ -115,13 +116,13 @@ const DiscrepancyList = ({ discrepancies = [] }) => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-medium text-gray-900">
-                      Slide {item.pdf_slide} • {item.excel_sheet} {item.excel_cell}
+                      Slide {item?.pdf_value_id?.split("_")?.[1] ?? ""}
                     </h4>
                     <span className="text-xs text-gray-500">
-                      Confidence: {Math.round((item.confidence_score || 0) * 100)}%
+                      Confidence: {Math.round((item.confidence || 0) * 100)}%
                     </span>
                   </div>
-                  
+
                   <div className="mt-2 grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-xs font-medium text-gray-700">Presentation Value</p>
@@ -129,10 +130,9 @@ const DiscrepancyList = ({ discrepancies = [] }) => {
                       <p className="text-xs text-gray-500">{item.pdf_context}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-700">Source Value</p>
-                      <p className="text-sm text-gray-900">{item.excel_value}</p>
-                      <p className="text-xs text-gray-500">
-                        {item.excel_sheet} • {item.excel_cell}
+                      <p className="text-xs font-medium text-gray-700">Excel Value</p>
+                      <p className="text-sm text-gray-900">
+                        {item?.excel_match?.excel_value}
                       </p>
                     </div>
                   </div>
@@ -163,30 +163,9 @@ const DiscrepancyList = ({ discrepancies = [] }) => {
               <div className="mt-4 pt-4 border-t border-gray-200 border-opacity-50">
                 <div className="space-y-3">
                   <div>
-                    <h5 className="text-xs font-medium text-gray-700 mb-1">AI Analysis</h5>
-                    <p className="text-sm text-gray-800">{item.ai_reasoning}</p>
+                    <h5 className="text-xs font-medium text-gray-700 mb-1">Audit Reasoning</h5>
+                    <p className="text-sm text-gray-800">{item.audit_reasoning}</p>
                   </div>
-
-                  {item.suggested_action && (
-                    <div>
-                      <h5 className="text-xs font-medium text-gray-700 mb-1">Suggested Action</h5>
-                      <p className="text-sm text-gray-800">{item.suggested_action}</p>
-                    </div>
-                  )}
-
-                  {(item.normalized_pdf_value || item.normalized_excel_value) && (
-                    <div>
-                      <h5 className="text-xs font-medium text-gray-700 mb-1">Normalized Values</h5>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-600">PDF:</span> {item.normalized_pdf_value}
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Excel:</span> {item.normalized_excel_value}
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             )}

@@ -6,7 +6,7 @@ class EnhancedApiService {
   constructor() {
     this.client = axios.create({
       baseURL: API_BASE_URL,
-      timeout: 300000, // 5 minutes for comprehensive AI operations
+      timeout: 1000000,
     });
 
     // Request interceptor
@@ -16,12 +16,12 @@ class EnhancedApiService {
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
-        
+
         console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`, {
           data: config.data,
           params: config.params
         });
-        
+
         return config;
       },
       (error) => {
@@ -38,12 +38,12 @@ class EnhancedApiService {
       },
       (error) => {
         console.error('[API] Response error:', error);
-        
+
         if (error.response?.status === 401) {
           localStorage.removeItem('veritas_token');
           window.location.href = '/';
         }
-        
+
         const message = error.response?.data?.detail || error.message || 'An error occurred';
         throw new Error(message);
       }
@@ -125,6 +125,38 @@ class EnhancedApiService {
     const response = await this.client.get('/health');
     return response;
   }
+
+  async getExcelMeta(fileId) {
+    const response = await this.client.get(`/excel/meta`, {
+      params: { file_id: fileId }
+    });
+    return response;
+  }
+
+  async getExcelPage({ fileId, sheet, r0, r1, c0, c1 }) {
+    const response = await this.client.get(`/excel/page`, {
+      params: {
+        file_id: fileId,
+        sheet,
+        r0,
+        r1,
+        c0,
+        c1
+      }
+    });
+    return response;
+  }
+
+  async getExcelSpotlight({ fileId, sheet, cell }) {
+    const response = await this.client.get(`/excel/spotlight`, {
+      params: {
+        file_id: fileId,
+        sheet,
+        cell
+      }
+    });
+    return response;
+  }
 }
 
 // Export both names for backward compatibility
@@ -133,3 +165,15 @@ const enhancedApiService = apiService;
 
 export { apiService, enhancedApiService };
 export default apiService;
+
+export async function getExcelMeta(fileId) {
+  return apiService.getExcelMeta(fileId);
+}
+
+export async function getExcelPage(params) {
+  return apiService.getExcelPage(params);
+}
+
+export async function getExcelSpotlight(params) {
+  return apiService.getExcelSpotlight(params);
+}
