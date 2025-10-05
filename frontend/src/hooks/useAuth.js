@@ -19,7 +19,7 @@ export const useAuth = () => {
         setIsAuthenticated(true);
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
+      // console.error('Auth check failed:', error);
       localStorage.removeItem('veritas_token');
       setIsAuthenticated(false);
       setUser(null);

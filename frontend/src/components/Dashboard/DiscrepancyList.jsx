@@ -34,7 +34,7 @@ const DiscrepancyList = ({ discrepancies = [] }) => {
 
   const toggleExpanded = (index) => {
     const newExpanded = new Set(expandedItems);
-    console.log('newExpanded', discrepancies);
+    // console.log('newExpanded', discrepancies);
     if (newExpanded.has(index)) {
       newExpanded.delete(index);
     } else {

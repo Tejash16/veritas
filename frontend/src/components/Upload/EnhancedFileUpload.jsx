@@ -45,7 +45,7 @@ const EnhancedFileUpload = () => {
 
   const uploadFiles = async (files) => {
     setUploading(true);
-    console.log('[Upload] Starting enhanced upload...');
+    // console.log('[Upload] Starting enhanced upload...');
 
     try {
       const formData = new FormData();
@@ -54,14 +54,14 @@ const EnhancedFileUpload = () => {
       });
 
       const response = await apiService.uploadDocuments(formData);
-      console.log('[Upload] Upload completed:', response);
+      // console.log('[Upload] Upload completed:', response);
 
       setUploadedFiles(response.documents);
       setSessionId(response.session_id);
       
 
     } catch (error) {
-      console.error('[Upload] Upload failed:', error);
+      // console.error('[Upload] Upload failed:', error);
       toast.error('Upload failed: ' + error.message);
     } finally {
       setUploading(false);
@@ -77,19 +77,19 @@ const EnhancedFileUpload = () => {
     setProcessing(true);
 
     try {
-      console.log('[Processing] Starting comprehensive processing...');
+      // console.log('[Processing] Starting comprehensive processing...');
       
       // Step 1: Process documents for extraction
       const processingResponse = await apiService.processDocuments(sessionId);
-      console.log('[Processing] Document processing completed:', processingResponse);
+      // console.log('[Processing] Document processing completed:', processingResponse);
 
 
       // Step 2: Navigate directly to validation (skip mapping)
-      console.log('[Processing] Navigating to direct validation...');
+      // console.log('[Processing] Navigating to direct validation...');
       navigate(`/validation/${sessionId}`);
 
     } catch (error) {
-      console.error('[Processing] Processing failed:', error);
+      // console.error('[Processing] Processing failed:', error);
       toast.error('Processing failed: ' + error.message);
     } finally {
       setProcessing(false);

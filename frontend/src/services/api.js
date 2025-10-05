@@ -17,15 +17,15 @@ class EnhancedApiService {
           config.headers.Authorization = `Bearer ${token}`;
         }
 
-        console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`, {
-          data: config.data,
-          params: config.params
-        });
+        // console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`, {
+        //   data: config.data,
+        //   params: config.params
+        // });
 
         return config;
       },
       (error) => {
-        console.error('[API] Request error:', error);
+        // console.error('[API] Request error:', error);
         return Promise.reject(error);
       }
     );
@@ -33,11 +33,11 @@ class EnhancedApiService {
     // Response interceptor
     this.client.interceptors.response.use(
       (response) => {
-        console.log(`[API] Response:`, response.data);
+        // console.log(`[API] Response:`, response.data);
         return response.data;
       },
       (error) => {
-        console.error('[API] Response error:', error);
+        // console.error('[API] Response error:', error);
 
         if (error.response?.status === 401) {
           localStorage.removeItem('veritas_token');

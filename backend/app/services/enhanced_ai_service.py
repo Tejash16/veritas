@@ -235,16 +235,16 @@ class EnhancedGeminiService:
     3. Return ONLY valid JSON, no other text
 """
         
-        with open('prompt.txt','a',encoding='utf-8') as f:
-            f.write(prompt)
-            f.write("====================================")
+        # with open('prompt.txt','w',encoding='utf-8') as f:
+        #     f.write(prompt)
+        #     f.write("====================================")
 
         try:
             response = self.model.generate_content(prompt)
             result = await self._parse_gemini_json_response_robust(response.text, f"vector_audit_batch_{batch_num}")
-            with open('result.txt','a',encoding='utf-8') as f:
-                f.write(str(result))
-                f.write("====================================")
+            # with open('result.txt','w',encoding='utf-8') as f:
+            #     f.write(str(result))
+            #     f.write("====================================")
             
             batch_results = result.get("batch_results", [])
 

@@ -336,6 +336,26 @@ async def upload_documents_enhanced(
 ):
     """Enhanced document upload with comprehensive validation"""
     logger.info(f"Comprehensive upload started by user: {current_user.username}")
+
+    # Cleanup
+    try:
+        if os.path.exists(UPLOAD_DIR):
+            for filename in os.listdir(UPLOAD_DIR):
+                file_path = os.path.join(UPLOAD_DIR, filename)
+                try:
+                    if os.path.isfile(file_path) or os.path.islink(file_path):
+                        os.unlink(file_path)
+                    elif os.path.isdir(file_path):
+                        shutil.rmtree(file_path)
+                except Exception as e:
+                    logger.warning(f"Failed to delete {file_path}: {e}")
+        else:
+            os.makedirs(UPLOAD_DIR, exist_ok=True)
+        logger.info("Previous files successfully removed from upload directory.")
+    except Exception as e:
+        logger.error(f"Error cleaning upload directory: {e}")
+        raise HTTPException(status_code=500, detail="Failed to clean upload directory")
+
     
     # Validate files
     pdf_files = [f for f in files if f.content_type == "application/pdf"]
@@ -494,6 +514,7 @@ async def process_documents_comprehensive(
                 
                 excel_analyses[excel_doc.file_id] = excel_analysis
                 total_excel_values = excel_analysis.get("potential_sources", [])
+                all_excel_values = total_excel_values
                 
                 # Collect ALL Excel values for validation (NO LIMITS)
                 # potential_sources = excel_analysis.get("potential_sources", [])
@@ -542,8 +563,8 @@ async def process_documents_comprehensive(
         session.comprehensive_statistics = comprehensive_statistics
         session.extraction_performance = {
             "processing_duration_seconds": processing_duration,
-            "total_values_extracted": len(pdf_analysis.get('all_extracted_values', [])) + len(all_excel_values),
-            "values_per_second": (len(pdf_analysis.get('all_extracted_values', [])) + len(all_excel_values)) / max(processing_duration, 1),
+            "total_values_extracted": len(pdf_analysis.get('all_extracted_values', [])) + all_excel_values,
+            "values_per_second": (len(pdf_analysis.get('all_extracted_values', [])) + all_excel_values) / max(processing_duration, 1),
             "files_processed": len(excel_docs) + 1,
             "success_rate": (comprehensive_statistics["files_processed"] + 1) / (len(excel_docs) + 1) * 100
         }
@@ -678,7 +699,7 @@ async def get_validation_data(
             ],
             "validation_statistics": {
                 "total_pdf_values": len(pdf_values),
-                "total_excel_values": len(excel_values),
+                "total_excel_values": excel_values,
                 "total_pages": document_preview.get("total_pages", 0),
             },
             "validation_features": {
@@ -692,7 +713,7 @@ async def get_validation_data(
         session.validation_data = validation_data
         db.commit()
         
-        logger.info(f"Validation data prepared: {len(pdf_values)} PDF values, {len(excel_values)} Excel values")
+        logger.info(f"Validation data prepared: {len(pdf_values)} PDF values, {excel_values} Excel values")
         logger.info(f"Excel viewer enabled: {excel_file_id is not None}")  # ← ADD THIS
         
         return validation_data
@@ -926,9 +947,9 @@ async def start_direct_audit(
             "audit_type": "comprehensive_direct_validation",
             "ai_model": "gemini-2.5-pro-comprehensive",
             "pdf_values_count": len(pdf_values),
-            "excel_values_count": len(excel_values),
+            "excel_values_count": excel_values,
             "total_values_to_audit": len(pdf_values),
-            "total_excel_sources_available": len(excel_values),
+            "total_excel_sources_available": excel_values,
             "extraction_approach": "comprehensive_no_limits",
             "coverage_percentage": 100.0,
             "initiated_by": current_user.username,
@@ -941,7 +962,7 @@ async def start_direct_audit(
         db.commit()
         
         logger.info(f"COMPREHENSIVE direct audit session created: {audit_session_id}")
-        logger.info(f"Auditing {len(pdf_values)} PDF values against {len(excel_values)} Excel values")
+        logger.info(f"Auditing {len(pdf_values)} PDF values against {excel_values} Excel values")
         
         # Run direct comprehensive audit
         audit_session.status = "running"
@@ -1003,10 +1024,10 @@ async def start_direct_audit(
             "performance_metrics": {
                 "audit_duration_seconds": audit_duration,
                 "values_audited_per_second": len(pdf_values) / max(audit_duration, 1),
-                "total_comparisons_made": len(pdf_values) * min(len(excel_values), 100)  # Gemini batch limit
+                "total_comparisons_made": len(pdf_values) * min(excel_values, 100)  # Gemini batch limit
             },
             "redirect_url": f"/audit/{audit_session_id}",
-            "message": f"COMPREHENSIVE direct audit completed: {matched}/{total_audited} values validated with {len(excel_values)} Excel sources"
+            "message": f"COMPREHENSIVE direct audit completed: {matched}/{total_audited} values validated with {excel_values} Excel sources"
         }
         
     except Exception as e:
@@ -1047,7 +1068,7 @@ async def get_validation_status(
     ready_for_audit = (
         has_extraction and 
         len(pdf_values) > 0 and 
-        len(excel_values) > 0
+        excel_values > 0
     )
     
     return {
@@ -1057,8 +1078,8 @@ async def get_validation_status(
             "has_extraction_results": has_extraction,
             "has_validation_data": has_validation_data,
             "total_pdf_values": len(pdf_values),
-            "total_excel_values": len(excel_values),
-            "total_values_for_validation": len(pdf_values) + len(excel_values),
+            "total_excel_values": excel_values,
+            "total_values_for_validation": len(pdf_values) + excel_values,
             "ready_for_audit": ready_for_audit,
             "coverage": "100% of ALL extracted values",
             "comprehensive_extraction": True

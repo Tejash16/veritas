@@ -36,7 +36,7 @@ function App() {
         setIsAuthenticated(true);
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
+      // console.error('Auth check failed:', error);
       localStorage.removeItem('veritas_token');
     } finally {
       setLoading(false);

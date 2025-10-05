@@ -36,7 +36,7 @@ const AuditDashboard = () => {
   useEffect(() => {
     if (location.state?.auditResults) {
       setAuditResults(location.state.auditResults);
-      console.log('[Audit Dashboard] Received audit results:', auditResults);
+      // console.log('[Audit Dashboard] Received audit results:', auditResults);
     }
   }, [location.state]);
 

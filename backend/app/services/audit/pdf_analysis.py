@@ -49,10 +49,12 @@ class PdfAnalysisService:
                 
                 # Extract high-quality page image with coordinates
                 page_data = await self._extract_page_with_coordinates(page, page_num + 1)
+                if len(page_data['extracted_values']) == 0:
+                    continue
                 page_analyses.append(page_data)
                 
                 # Rate limiting for Gemini API
-                await asyncio.sleep(1)
+                # await asyncio.sleep(1)
             
             doc.close()
             
@@ -84,24 +86,22 @@ class PdfAnalysisService:
             Analyze this presentation slide (page {page_num}) and extract ONLY meaningful business-related numerical data. 
             Focus strictly on quantitative or financial metrics that convey insight — such as revenues, profits, growth %, market share, and performance indicators.
 
-            ❌ Do NOT extract:
-            - Section numbers, Page Numbers or headings (e.g., "1", "2", "3")
+            ❌ HARD DO NOT EXTRACT:
+            - Section numbers, slide numbers, or page numbers (e.g., "1", "2", "Page 3")
             - Bullet or list numbers
-            - Asterisks (*, **, †, ‡)
-            - Superscripts or symbols referencing notes
-            - Decorative or formatting numbers not representing data
-            - Standalone years or fiscal references (like "FY26") UNLESS directly linked to a metric (e.g., “Revenue grew 40% in FY26”)
+            - Decorative numbers or formatting numbers (asterisks, superscripts, footnotes)
+            - Standalone fiscal years or quarters (e.g., "FY26", "Q1 FY26") unless directly tied to a numeric metric (e.g., "Revenue grew 40% in FY26")
+            - Any number that exists purely as a reference, label, or metadata
 
-            ✅ Extract ONLY:
-            - Financial, market, or performance metrics
-            - Percentages, ratios, and growth figures with business meaning
-            - Quantitative data directly tied to business context (tables, charts, metrics)
-            - Contextually meaningful date ranges or periods tied to financial or performance data
-            - Use header/footer markers if they ara adding extra information to the data
+            ✅ ONLY EXTRACT:
+            - Financial, market, or operational metrics with clear business meaning
+            - Percentages, ratios, and growth figures
+            - Quantitative data directly tied to tables, charts, or performance indicators
+            - Dates or periods only if they are attached to a numeric metric (e.g., "Revenue in Q1 FY26: $10M")
 
-            For each number found, provide:
+            For each number, provide:
             - Exact value as displayed
-            - Business context explaining what it represents
+            - Business context
             - Normalized coordinates [x1, y1, x2, y2] on 0–1 scale
             - Data type classification
             - Only include data points that provide measurable business insight
@@ -116,10 +116,6 @@ class PdfAnalysisService:
                         "value": "exact_number_as_displayed",
                         "normalized_value": "cleaned_numeric_format",
                         "data_type": "currency|percentage|count|ratio|date|metric",
-                        "coordinates": {{
-                            "bounding_box": [0.1, 0.2, 0.3, 0.4],
-                            "confidence": 0.9
-                        }},
                         "business_context": {{
                             "semantic_meaning": "detailed_description_of_what_this_number_represents",
                             "business_category": "revenue|costs|growth|operational|financial|market",
@@ -130,10 +126,11 @@ class PdfAnalysisService:
                     }}
                 ]
             }}
-
-            IMPORTANT: Be thorough - extract ALL visible numbers, not just the prominent ones. Return only valid JSON.
+            If the only number on a page appears isolated (e.g., "1" or "2" in a corner or footer) 
+            with context related to page number or slide number, ignore that
+            and return a blank json {{}}
             """
-
+            
             response = self.model.generate_content([prompt, image])
             result = await self._parse_gemini_json_response_robust(response.text, f"page_{page_num}")
             
@@ -231,7 +228,6 @@ class PdfAnalysisService:
             # json_str = self._clean_json_aggressively(json_str)
             
             # Step 4: Try to parse
-            print("before parse")
             result = json.loads(json_str)
             logger.info(f"Successfully parsed Gemini JSON for {context}")
             return result
@@ -329,42 +325,7 @@ class PdfAnalysisService:
                 value['page_number'] = page.get('page_number', 0)
                 all_values.append(value)
 
-        # Simplified synthesis for better reliability
-        try:
-            prompt = f"""
-            Analyze {len(page_analyses)} presentation pages with {len(all_values)} extracted values.
-
-            Create a document summary in JSON format:
-            {{
-                "document_summary": {{
-                    "total_pages": {len(page_analyses)},
-                    "document_type": "financial_presentation",
-                    "main_business_themes": ["revenue", "growth", "performance"]
-                }},
-                "all_extracted_values": {json.dumps(all_values[:100])},
-                "extraction_quality_metrics": {{
-                    "total_values_extracted": {len(all_values)},
-                    "overall_confidence": 0.85
-                }}
-            }}
-
-            Return only valid JSON.
-            """
-
-            response = self.model.generate_content(prompt)
-            synthesis = await self._parse_gemini_json_response_robust(response.text, "document_synthesis")
-            
-            # Ensure all_extracted_values is populated
-            if not synthesis.get('all_extracted_values'):
-                synthesis['all_extracted_values'] = all_values
-            
-            logger.info("Document synthesis completed successfully")
-            return synthesis
-            
-        except Exception as e:
-            logger.error(f"Document synthesis failed: {e}")
-            # Return fallback structure
-            return {
+        synthesis = {
                 "document_summary": {
                     "total_pages": len(page_analyses),
                     "document_type": "financial_presentation"
@@ -373,15 +334,18 @@ class PdfAnalysisService:
                 "extraction_quality_metrics": {
                     "total_values_extracted": len(all_values),
                     "overall_confidence": 0.8
-                },
-                "synthesis_error": str(e)
+                }
             }
+        logger.info("Document synthesis completed successfully")
+        return synthesis
+
 
 
 if __name__ == "__main__":
     async def main():
         pd = PdfAnalysisService()
         result = await pd.extract_comprehensive_pdf_data('/Users/himanshusharma/Downloads/ABHI IR Q1FY26 v12.pdf')
+        # result = await pd.extract_comprehensive_pdf_data('/Users/himanshusharma/Personal_Code/sample data/Main Presentation - 1 page.pdf')
         with open('result.json', 'w', encoding='utf-8') as f:
             json.dump(result, f, ensure_ascii=False, indent=4)
     asyncio.run(main())

@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  X, Edit3, Eye, AlertTriangle, TrendingUp, ArrowRight,
-  ZoomIn, ZoomOut, Brain, CheckCircle, Play,
-  FileText, BarChart3, Save, Database,
+  X, Edit3, AlertTriangle, TrendingUp, ArrowRight, CheckCircle, Play,
+  FileText, Save,
   Filter, Search, Download, RefreshCw,
-  ChevronDown, ChevronUp, SortAsc, SortDesc, Maximize2
+  ChevronDown, ChevronUp, SortAsc, SortDesc
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -19,7 +18,7 @@ const ComprehensiveValidation = () => {
   // Core state
   const [validationData, setValidationData] = useState(null);
   const [pdfValues, setPdfValues] = useState([]);
-  const [excelValues, setExcelValues] = useState(Array(10).fill(""));
+  const [excelValues, setExcelValues] = useState(null);
   const [loading, setLoading] = useState(true);
   const [startingAudit, setStartingAudit] = useState(false);
 
@@ -61,6 +60,13 @@ const ComprehensiveValidation = () => {
   const canvasRef = useRef(null);
   const overlayCanvasRef = useRef(null);
 
+  // Helper to get excel values count (handles both number and array)
+  const getExcelValuesCount = () => {
+    if (typeof excelValues === 'number') return excelValues;
+    if (Array.isArray(excelValues)) return excelValues.length;
+    return 0;
+  };
+
   useEffect(() => {
     loadValidationData();
   }, [sessionId]);
@@ -70,7 +76,7 @@ const ComprehensiveValidation = () => {
       drawDocumentPage();
       drawValueOverlays();
     }
-  }, [validationData, currentPage, zoom, selectedValueId, hoveredValueId, showBoundingBoxes, filters.confidence]);
+  }, [validationData, currentPage, zoom, selectedValueId, hoveredValueId, showBoundingBoxes, filters.confidence, validationMode]);
 
   // Memoized filtering and sorting for performance with large datasets
   const filteredPdfValues = useMemo(() => {
@@ -144,59 +150,8 @@ const ComprehensiveValidation = () => {
     return filtered;
   }, [pdfValues, filters, sorting]);
 
-  const filteredExcelValues = useMemo(() => {
-    let filtered = excelValues.filter(value => {
-      // Search term filter
-      if (filters.searchTerm) {
-        const searchLower = filters.searchTerm.toLowerCase();
-        const valueStr = (value.value || '').toString().toLowerCase();
-        const contextStr = (value.business_context || '').toLowerCase();
-        const fileStr = (value.source_file || '').toLowerCase();
-        if (!valueStr.includes(searchLower) &&
-          !contextStr.includes(searchLower) &&
-          !fileStr.includes(searchLower)) return false;
-      }
-
-      // Show modified filter
-      if (filters.showModified && !value.user_modified) return false;
-
-      return true;
-    });
-
-    // Apply sorting for Excel values
-    filtered.sort((a, b) => {
-      let aVal, bVal;
-
-      switch (sorting.field) {
-        case 'value':
-          aVal = parseFloat(a.value) || 0;
-          bVal = parseFloat(b.value) || 0;
-          break;
-        case 'file':
-          aVal = a.source_file || '';
-          bVal = b.source_file || '';
-          break;
-        case 'likelihood':
-          aVal = a.presentation_likelihood || 0;
-          bVal = b.presentation_likelihood || 0;
-          break;
-        default:
-          aVal = a[sorting.field] || '';
-          bVal = b[sorting.field] || '';
-      }
-
-      if (sorting.direction === 'asc') {
-        return aVal > bVal ? 1 : -1;
-      } else {
-        return aVal < bVal ? 1 : -1;
-      }
-    });
-
-    return filtered;
-  }, [excelValues, filters, sorting]);
-
   // Pagination for current dataset
-  const currentDataset = validationMode === 'pdf' ? filteredPdfValues : filteredExcelValues;
+  const currentDataset = validationMode === 'pdf' ? filteredPdfValues : filteredPdfValues;
   const totalPages = Math.ceil(currentDataset.length / pagination.itemsPerPage);
   const currentPageData = currentDataset.slice(
     pagination.currentPage * pagination.itemsPerPage,
@@ -205,16 +160,17 @@ const ComprehensiveValidation = () => {
 
   const loadValidationData = async () => {
     try {
-      console.log('[Comprehensive] Loading validation data for session:', sessionId);
+      // console.log('[Comprehensive] Loading validation data for session:', sessionId);
 
       const data = await apiService.client.get(`/validation/data/${sessionId}`);
-      console.log('[Comprehensive] Validation data loaded:', data);
+      // console.log('[Comprehensive] Validation data loaded:', data);
 
       setValidationData(data);
       setPdfValues(data.pdf_values || []);
+      setExcelValues(data.excel_values || 0);
 
     } catch (error) {
-      console.error('[Comprehensive] Failed to load validation data:', error);
+      // console.error('[Comprehensive] Failed to load validation data:', error);
       toast.error('Failed to load validation data: ' + error.message);
     } finally {
       setLoading(false);
@@ -401,22 +357,8 @@ const ComprehensiveValidation = () => {
 
       toast.success('PDF value updated successfully');
     } catch (error) {
-      console.error('[Comprehensive] Failed to update PDF value:', error);
+      // console.error('[Comprehensive] Failed to update PDF value:', error);
       toast.error('Failed to update PDF value: ' + error.message);
-    }
-  };
-
-  const handleExcelValueEdit = async (valueId, newData) => {
-    try {
-      await apiService.client.post(`/validation/update-excel-value/${sessionId}`, {
-        value_id: valueId,
-        updates: newData
-      });
-
-      toast.success('Excel value updated successfully');
-    } catch (error) {
-      console.error('[Comprehensive] Failed to update Excel value:', error);
-      toast.error('Failed to update Excel value: ' + error.message);
     }
   };
 
@@ -429,8 +371,8 @@ const ComprehensiveValidation = () => {
     setStartingAudit(true);
 
     try {
-      console.log('[Comprehensive Audit] Starting direct comprehensive audit...');
-      console.log(`[Comprehensive Audit] Auditing ${pdfValues.length} PDF values against ${excelValues.length} Excel values`);
+      // console.log('[Comprehensive Audit] Starting direct comprehensive audit...');
+      // console.log(`[Comprehensive Audit] Auditing ${pdfValues.length} PDF values against ${getExcelValuesCount()} Excel values`);
 
       const auditResponse = await apiService.client.post(`/validation/start-direct-audit/${sessionId}`);
 
@@ -445,7 +387,7 @@ const ComprehensiveValidation = () => {
       });
 
     } catch (error) {
-      console.error('[Comprehensive Audit] Direct audit failed:', error);
+      // console.error('[Comprehensive Audit] Direct audit failed:', error);
       toast.error('Comprehensive audit failed: ' + error.message);
     } finally {
       setStartingAudit(false);
@@ -457,12 +399,11 @@ const ComprehensiveValidation = () => {
       const exportData = {
         session_id: sessionId,
         pdf_values: filteredPdfValues,
-        excel_values: filteredExcelValues,
+        excel_values: excelValues,
         statistics: {
           total_pdf_values: pdfValues.length,
-          total_excel_values: excelValues.length,
+          total_excel_values: getExcelValuesCount(),
           filtered_pdf_values: filteredPdfValues.length,
-          filtered_excel_values: filteredExcelValues.length
         },
         export_timestamp: new Date().toISOString(),
         export_format: format
@@ -587,12 +528,12 @@ const ComprehensiveValidation = () => {
             <div className="text-xs text-green-600 mt-1">All Pages Processed</div>
           </div>
           <div className="bg-white rounded p-4 text-center">
-            <div className="text-3xl font-bold text-green-600">{excelValues.length}</div>
+            <div className="text-3xl font-bold text-green-600">{getExcelValuesCount()}</div>
             <div className="text-sm text-gray-600">Excel Values Found</div>
             <div className="text-xs text-green-600 mt-1">All Sheets Analyzed</div>
           </div>
           <div className="bg-white rounded p-4 text-center">
-            <div className="text-3xl font-bold text-purple-600">{pdfValues.length + excelValues.length}</div>
+            <div className="text-3xl font-bold text-purple-600">{pdfValues.length + getExcelValuesCount()}</div>
             <div className="text-sm text-gray-600">Total for Validation</div>
             <div className="text-xs text-purple-600 mt-1">Comprehensive Coverage</div>
           </div>
@@ -620,7 +561,7 @@ const ComprehensiveValidation = () => {
 
           {expandedSections.filters && (
             <div className="p-4 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
                 {/* Search */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
@@ -675,7 +616,7 @@ const ComprehensiveValidation = () => {
                     <select
                       value={sorting.field}
                       onChange={(e) => setSorting(prev => ({ ...prev, field: e.target.value }))}
-                      className="px-3 py-1 border border-gray-300 rounded text-sm"
+                      className="px-3 py-1 pr-9 border border-gray-300 rounded text-sm"
                     >
                       <option value="confidence">Confidence</option>
                       <option value="value">Value</option>
@@ -689,16 +630,6 @@ const ComprehensiveValidation = () => {
                       {sorting.direction === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
                     </button>
                   </div>
-
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={filters.showModified}
-                      onChange={(e) => setFilters(prev => ({ ...prev, showModified: e.target.checked }))}
-                      className="rounded"
-                    />
-                    <span className="text-sm text-gray-700">Show only modified</span>
-                  </label>
                 </div>
 
                 <button
@@ -739,10 +670,7 @@ const ComprehensiveValidation = () => {
               validationData={validationData}
               currentPage={currentPage}
               setCurrentPage={setCurrentPage}
-              zoom={zoom}
-              setZoom={setZoom}
               showBoundingBoxes={showBoundingBoxes}
-              setShowBoundingBoxes={setShowBoundingBoxes}
               canvasRef={canvasRef}
               overlayCanvasRef={overlayCanvasRef}
               onCanvasClick={handleCanvasClick}
@@ -771,8 +699,8 @@ const ComprehensiveValidation = () => {
 };
 
 const InteractiveDocumentViewer = ({
-  validationData, currentPage, setCurrentPage, zoom, setZoom,
-  showBoundingBoxes, setShowBoundingBoxes,
+  validationData, currentPage, setCurrentPage,
+  showBoundingBoxes,
   canvasRef, overlayCanvasRef, onCanvasClick, onCanvasMouseMove
 }) => {
   const totalPages = validationData?.document_preview?.pages?.length || 0;
@@ -780,7 +708,7 @@ const InteractiveDocumentViewer = ({
   return (
     <div className="bg-white border rounded-lg shadow-sm overflow-hidden">
       <div className="flex items-center justify-between p-4 border-b bg-gray-50">
-        <div className="flex items-center space-x-4">
+        <div className="flex  space-x-10">
           <h3 className="text-lg font-medium flex items-center">
             <FileText className="h-5 w-5 mr-2 text-blue-600" />
             PDF Document Preview
@@ -788,44 +716,6 @@ const InteractiveDocumentViewer = ({
           <span className="text-sm text-gray-500">
             Page {currentPage + 1} of {totalPages}
           </span>
-        </div>
-
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-1 bg-white rounded border">
-            <button
-              onClick={() => setZoom(Math.max(0.5, zoom - 0.25))}
-              className="p-1 text-gray-600 hover:text-gray-900"
-            >
-              <ZoomOut className="h-4 w-4" />
-            </button>
-            <span className="px-2 text-sm text-gray-600 border-x">
-              {Math.round(zoom * 100)}%
-            </span>
-            <button
-              onClick={() => setZoom(Math.min(3.0, zoom + 0.25))}
-              className="p-1 text-gray-600 hover:text-gray-900"
-            >
-              <ZoomIn className="h-4 w-4" />
-            </button>
-          </div>
-
-          <button
-            onClick={() => setShowBoundingBoxes(!showBoundingBoxes)}
-            className={`px-3 py-1 text-sm rounded border ${showBoundingBoxes
-                ? 'bg-blue-100 text-blue-700 border-blue-300'
-                : 'bg-white text-gray-600 border-gray-300'
-              }`}
-          >
-            <Eye className="h-4 w-4 inline mr-1" />
-            Overlays
-          </button>
-
-          <button
-            className="p-1 text-gray-600 hover:text-gray-900"
-            title="Maximize viewer"
-          >
-            <Maximize2 className="h-4 w-4" />
-          </button>
         </div>
       </div>
 
@@ -859,20 +749,70 @@ const InteractiveDocumentViewer = ({
           Previous
         </button>
 
-        <div className="flex items-center space-x-1 max-w-md overflow-x-auto">
-          {Array.from({ length: Math.min(totalPages, 20) }, (_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentPage(i)}
-              className={`w-8 h-8 text-xs rounded ${currentPage === i
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-            >
-              {i + 1}
-            </button>
-          ))}
-          {totalPages > 20 && <span className="text-gray-500">...</span>}
+        <div className="flex items-center space-x-1">
+          {(() => {
+            // Calculate which 4 pages to show
+            const maxVisiblePages = 4;
+            let startPage = Math.max(0, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages);
+            
+            // Adjust startPage if we're near the end
+            if (endPage - startPage < maxVisiblePages) {
+              startPage = Math.max(0, endPage - maxVisiblePages);
+            }
+            
+            const pages = [];
+            
+            // Show first page and ellipsis if needed
+            if (startPage > 0) {
+              pages.push(
+                <button
+                  key={0}
+                  onClick={() => setCurrentPage(0)}
+                  className="w-8 h-8 text-xs rounded bg-gray-200 text-gray-700 hover:bg-gray-300"
+                >
+                  1
+                </button>
+              );
+              if (startPage > 1) {
+                pages.push(<span key="ellipsis-start" className="text-gray-500">...</span>);
+              }
+            }
+            
+            // Show the 4 visible pages
+            for (let i = startPage; i < endPage; i++) {
+              pages.push(
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i)}
+                  className={`w-8 h-8 text-xs rounded ${currentPage === i
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                >
+                  {i + 1}
+                </button>
+              );
+            }
+            
+            // Show ellipsis and last page if needed
+            if (endPage < totalPages) {
+              if (endPage < totalPages - 1) {
+                pages.push(<span key="ellipsis-end" className="text-gray-500">...</span>);
+              }
+              pages.push(
+                <button
+                  key={totalPages - 1}
+                  onClick={() => setCurrentPage(totalPages - 1)}
+                  className="w-8 h-8 text-xs rounded bg-gray-200 text-gray-700 hover:bg-gray-300"
+                >
+                  {totalPages}
+                </button>
+              );
+            }
+            
+            return pages;
+          })()}
         </div>
 
         <button
@@ -1058,7 +998,8 @@ const PdfValueCard = ({ value, isSelected, onSelect, onEdit, onStartEdit, isEdit
 
 const ComprehensiveDirectAuditPanel = ({ pdfValues, excelValues, onStartAudit, loading }) => {
   const readyForAudit = pdfValues.length > 0;
-  const totalValues = pdfValues.length + excelValues.length;
+  const excelCount = typeof excelValues === 'number' ? excelValues : (Array.isArray(excelValues) ? excelValues.length : 0);
+  const totalValues = pdfValues.length + excelCount;
 
   return (
     <div className="bg-white border rounded-lg overflow-hidden">
@@ -1073,7 +1014,7 @@ const ComprehensiveDirectAuditPanel = ({ pdfValues, excelValues, onStartAudit, l
               <div className="text-xs text-green-600">100% Coverage</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{excelValues.length}</div>
+              <div className="text-2xl font-bold text-green-600">{excelCount}</div>
               <div className="text-sm text-gray-600">Excel Sources</div>
               <div className="text-xs text-green-600">All Available</div>
             </div>
