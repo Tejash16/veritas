@@ -40,8 +40,8 @@ class EnhancedApiService {
         // console.error('[API] Response error:', error);
 
         if (error.response?.status === 401) {
-          localStorage.removeItem('veritas_token');
-          window.location.href = '/';
+          // localStorage.removeItem('veritas_token');
+          // window.location.href = '/';
         }
 
         const message = error.response?.data?.detail || error.message || 'An error occurred';

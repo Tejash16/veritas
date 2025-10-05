@@ -65,7 +65,7 @@ class EnhancedGeminiService:
         try:
             ea = ExcelAuditSystem()
             result = ea.analyse_excel_comprehensive(excel_path)
-            print(result)
+            # print(result)
             self.vector_db_path = result.faiss_index_path
             analysed_values = result.analysedValues
             logger.info(f"Excel analysis completed: {analysed_values} potential sources identified")

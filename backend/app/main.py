@@ -969,7 +969,7 @@ async def start_direct_audit(
         db.commit()
         
         start_time = datetime.utcnow()
-        print(pdf_values)
+        # print(pdf_values)
         
         # Use enhanced Gemini service for comprehensive direct audit
         audit_results = await enhanced_gemini_service.run_direct_comprehensive_audit(
