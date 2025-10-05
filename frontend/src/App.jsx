@@ -215,7 +215,7 @@ const LoginForm = ({ onLogin, loading }) => {
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
+      {/* <div className="flex items-center justify-between">
         <button
           type="button"
           onClick={fillDemoCredentials}
@@ -223,7 +223,7 @@ const LoginForm = ({ onLogin, loading }) => {
         >
           Use demo credentials
         </button>
-      </div>
+      </div> */}
 
       <div>
         <button

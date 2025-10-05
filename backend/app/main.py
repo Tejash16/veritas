@@ -176,8 +176,17 @@ def create_default_users():
                 hashed_password=hash_password("admin123"),
                 role="admin"
             )
+            auditor_user = User(  # NEW USER
+                user_id=str(uuid.uuid4()),
+                username="auditor",
+                email="auditor@veritas.com",
+                hashed_password=hash_password("auditor123"),
+                role="analyst"
+            )
+
             db.add(demo_user)
             db.add(admin_user)
+            db.add(auditor_user)
             db.commit()
             logger.info("Default users created successfully")
     except Exception as e:
