@@ -10,7 +10,7 @@ import { getExcelPage } from "../services/api";
  * @param {number} tileRows - Number of rows per tile (default: 200)
  * @param {number} tileCols - Number of columns per tile (default: 50)
  */
-export function useExcelTiles(fileId, tileRows = 900, tileCols = 200) {
+export function useExcelTiles(fileId, tileRows = 1000, tileCols = 250) {
   const cache = useRef(new Map());
 
   /**
