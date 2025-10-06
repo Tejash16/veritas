@@ -4,10 +4,9 @@ services:
   backend:
     build: ./backend
     container_name: veritas-backend
-    env_file:
-      - ./backend/.env
-    ports:
-      - "8008:8008"
+    env_file: ./backend/.env
+    command: >
+      uvicorn app.main:app --host 0.0.0.0 --port 8008
     volumes:
       - ./backend:/app
     restart: always
@@ -15,10 +14,21 @@ services:
   frontend:
     build: ./frontend
     container_name: veritas-frontend
-    ports:
-      - "3000:80"
+    restart: always
+    stdin_open: true
+    tty: true
+
+  nginx:
+    image: nginx:latest
+    container_name: veritas-nginx
     depends_on:
       - backend
-    environment:
-      - REACT_APP_API_URL=http://localhost:8008
+      - frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./certs:/etc/ssl/certs
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./frontend/dist:/usr/share/nginx/html
     restart: always
