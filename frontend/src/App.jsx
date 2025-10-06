@@ -3,14 +3,14 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import toast, { Toaster } from 'react-hot-toast';
 
 // Components
-import Header from './components/Common/Header';
-import AuditDashboard from './components/Dashboard/AuditDashboard';
-import ErrorBoundary from './components/Common/ErrorBoundary';
-import LoadingSpinner from './components/Common/LoadingSpinner';
+import Header from './components/Common/Header.jsx';
+import AuditDashboard from './components/Dashboard/AuditDashboard.jsx';
+import ErrorBoundary from './components/Common/ErrorBoundary.jsx';
+import LoadingSpinner from './components/Common/LoadingSpinner.jsx';
 
 // Enhanced Components
-import InteractiveValidation from './components/Validation/InteractiveValidation';
-import EnhancedFileUpload from './components/Upload/EnhancedFileUpload';
+import InteractiveValidation from './components/Validation/InteractiveValidation.jsx';
+import EnhancedFileUpload from './components/Upload/EnhancedFileUpload.jsx';
 
 // Services
 import { authService } from './services/auth';

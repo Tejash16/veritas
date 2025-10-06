@@ -18,9 +18,7 @@ class ErrorBoundary extends React.Component {
     });
 
     // Log error to console in development
-    if (process.env.NODE_ENV === 'development') {
-      // console.error('ErrorBoundary caught an error:', error, errorInfo);
-    }
+
   }
 
   handleRetry = () => {
@@ -62,14 +60,14 @@ class ErrorBoundary extends React.Component {
                 </button>
               </div>
 
-              {process.env.NODE_ENV === 'development' && this.state.error && (
+              {/* {process.env.NODE_ENV === 'development' && this.state.error && (
                 <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-md">
                   <h3 className="text-sm font-medium text-red-800 mb-2">Error Details:</h3>
                   <pre className="text-xs text-red-700 whitespace-pre-wrap">
                     {this.state.error.toString()}
                   </pre>
                 </div>
-              )}
+              )} */}
             </div>
           </div>
         </div>
